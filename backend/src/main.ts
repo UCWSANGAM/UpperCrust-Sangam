@@ -44,4 +44,8 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`SANGAM backend listening on ${port}`);
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('FATAL: backend failed to start');
+  console.error(err);
+  process.exit(1);
+});

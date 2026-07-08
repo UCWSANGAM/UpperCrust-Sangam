@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  BRANCH_MANAGER
+  RELATIONSHIP_MANAGER
+  OPERATIONS
+  RESEARCH
+  COMPLIANCE
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  role          Role      @default(RELATIONSHIP_MANAGER)
+  isActive      Boolean   @default(true)
+  twoFactorSecret String?
+  twoFactorEnabled Boolean @default(false)
+  branchId      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+  devices       DeviceSession[]
+}
+
+// Persistent revocation store — supports instant logout / force logout
+model RefreshToken {
+  id          String   @id @default(uuid())
+  tokenHash   String   @unique
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  revoked     Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+}
+
+model DeviceSession {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceInfo  String
+  ipAddress   String
+  lastSeenAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entity     String
+  entityId   String?
+  ipAddress  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
+}
+
+// Core CRM entity — mirrors distributor investor-book structure
+model Investor {
+  id                String   @id @default(uuid())
+  ucc               String?  @unique
+  name              String
+  panEncrypted      String?  // stored AES-256 encrypted at the application layer, never plaintext
+  mobileEncrypted   String?
+  dateOfBirth       DateTime?
+  gender            String?
+  taxStatus         String?
+  ownerId           String?  // RM/partner owning this investor
+  familyGroup       String?
+  totalMfAum        Decimal? @db.Decimal(18, 2)
+  equityAum         Decimal? @db.Decimal(18, 2)
+  debtAum           Decimal? @db.Decimal(18, 2)
+  xirrEquity        Decimal? @db.Decimal(6, 2)
+  xirrDebt          Decimal? @db.Decimal(6, 2)
+  xirrTotal         Decimal? @db.Decimal(6, 2)
+  healthScore       Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  folios            Folio[]
+
+  @@index([ownerId])
+  @@index([familyGroup])
+}
+
+model Folio {
+  id             String   @id @default(uuid())
+  investorId     String
+  investor       Investor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  folioNumber    String
+  amc            String
+  scheme         String
+  option         String?
+  balanceUnits   Decimal? @db.Decimal(18, 4)
+  currentValue   Decimal? @db.Decimal(18, 2)
+  status         String?
+  asOnDate       DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([investorId])
+}

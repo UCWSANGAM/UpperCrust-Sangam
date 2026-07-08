@@ -1,0 +1,18 @@
+# Local development only — Railway provisions Postgres/Redis as managed plugins in production.
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sangam
+      POSTGRES_PASSWORD: sangam
+      POSTGRES_DB: sangam
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+volumes:
+  pgdata:

@@ -227,6 +227,12 @@ export class InvestorsService {
         sipGrossSalesFY: true,
         sipNetSalesFY: true,
         nfoGrossSalesFY: true,
+        swpAmount: true,
+        topUpSipAmount: true,
+        taxPlanSalesFY: true,
+        pmsSalesFY: true,
+        pmsSalesCY: true,
+        fdBondSalesFY: true,
       },
       _count: { _all: true },
     });
@@ -254,6 +260,12 @@ export class InvestorsService {
         sipNetSalesFY: Number(g._sum.sipNetSalesFY) || 0,
         lumpsumGrossSalesFY: Math.max(0, (Number(g._sum.grossSalesFY) || 0) - (Number(g._sum.sipGrossSalesFY) || 0)),
         nfoGrossSalesFY: Number(g._sum.nfoGrossSalesFY) || 0,
+        swpAmount: Number(g._sum.swpAmount) || 0,
+        topUpSipAmount: Number(g._sum.topUpSipAmount) || 0,
+        taxPlanSalesFY: Number(g._sum.taxPlanSalesFY) || 0,
+        pmsSalesFY: Number(g._sum.pmsSalesFY) || 0,
+        pmsSalesCY: Number(g._sum.pmsSalesCY) || 0,
+        fdBondSalesFY: Number(g._sum.fdBondSalesFY) || 0,
       }))
       .sort((a, b) => b.netSalesFY - a.netSalesFY);
   }

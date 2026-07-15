@@ -20,6 +20,12 @@ type RmSales = {
   sipNetSalesFY: number;
   lumpsumGrossSalesFY: number;
   nfoGrossSalesFY: number;
+  swpAmount: number;
+  topUpSipAmount: number;
+  taxPlanSalesFY: number;
+  pmsSalesFY: number;
+  pmsSalesCY: number;
+  fdBondSalesFY: number;
 };
 
 const GOLD = '#B8935A';
@@ -66,27 +72,34 @@ export default function SalesPage() {
       {rows.length > 0 && (
         <div className="mb-6 grid gap-4 lg:grid-cols-2">
           <ChartCard title="SIP vs lumpsum (gross sales FY)" icon={Repeat}>
-            <ResponsiveContainer width="100%" height={180}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: 'SIP', value: Number((totals.sipGrossSalesFY / 10000000).toFixed(2)) },
-                    { name: 'Lumpsum', value: Number((totals.lumpsumGrossSalesFY / 10000000).toFixed(2)) },
-                  ]}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={45}
-                  outerRadius={68}
-                  paddingAngle={2}
-                  label={({ name, value }) => `${name} ₹${value}Cr`}
-                  labelLine={false}
-                >
-                  <Cell fill={GOLD} />
-                  <Cell fill={NAVY} />
-                </Pie>
-                <Tooltip formatter={(v: number) => `₹${v} Cr`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-              </PieChart>
-            </ResponsiveContainer>
+            {totals.sipGrossSalesFY === 0 ? (
+              <div className="flex h-[180px] flex-col items-center justify-center text-center">
+                <p className="text-[13px] text-muted">No SIP sales recorded yet for this period.</p>
+                <p className="mt-1 text-[12px] text-ink">All ₹{(totals.lumpsumGrossSalesFY / 10000000).toFixed(2)} Cr gross sales was lumpsum.</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'SIP', value: Number((totals.sipGrossSalesFY / 10000000).toFixed(2)) },
+                      { name: 'Lumpsum', value: Number((totals.lumpsumGrossSalesFY / 10000000).toFixed(2)) },
+                    ]}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={45}
+                    outerRadius={68}
+                    paddingAngle={2}
+                    label={({ name, value }) => `${name} ₹${value}Cr`}
+                    labelLine={false}
+                  >
+                    <Cell fill={GOLD} />
+                    <Cell fill={NAVY} />
+                  </Pie>
+                  <Tooltip formatter={(v: number) => `₹${v} Cr`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </ChartCard>
 
           <ChartCard title="Net sales FY by RM" icon={TrendingUp}>
@@ -143,8 +156,8 @@ export default function SalesPage() {
         </div>
       )}
 
-      <Card className="overflow-hidden">
-        <table className="w-full text-[13px]">
+      <Card className="overflow-x-auto">
+        <table className="w-full min-w-[1400px] text-[13px]">
           <thead>
             <tr className="border-b border-border bg-background/60 text-left text-[11px] font-medium uppercase tracking-wide text-muted">
               <th className="px-5 py-3">RM</th>
@@ -153,6 +166,11 @@ export default function SalesPage() {
               <th className="px-5 py-3 text-right">SIP Sales FY</th>
               <th className="px-5 py-3 text-right">Lumpsum FY</th>
               <th className="px-5 py-3 text-right">NFO FY</th>
+              <th className="px-5 py-3 text-right">Top-up SIP</th>
+              <th className="px-5 py-3 text-right">SWP Amount</th>
+              <th className="px-5 py-3 text-right">Tax-plan Sales FY</th>
+              <th className="px-5 py-3 text-right">PMS Sales FY</th>
+              <th className="px-5 py-3 text-right">FD/Bond Sales FY</th>
               <th className="px-5 py-3 text-right">Redemptions FY</th>
               <th className="px-5 py-3 text-right">Net Sales CY</th>
             </tr>
@@ -160,14 +178,14 @@ export default function SalesPage() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={8} className="px-5 py-8">
+                <td colSpan={13} className="px-5 py-8">
                   <div className="mx-auto h-4 w-40 animate-pulse rounded bg-border/70" />
                 </td>
               </tr>
             )}
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={8}>
+                <td colSpan={13}>
                   <EmptyState message="No sales data yet — upload the investor data file under Data Import." icon={Wallet} />
                 </td>
               </tr>
@@ -187,6 +205,11 @@ export default function SalesPage() {
                 <td className="px-5 py-3 text-right">
                   {r.nfoGrossSalesFY > 0 ? <Badge tone="blue">{formatCr(r.nfoGrossSalesFY)}</Badge> : <span className="text-muted">—</span>}
                 </td>
+                <td className="px-5 py-3 text-right text-muted">{r.topUpSipAmount > 0 ? formatCr(r.topUpSipAmount) : '—'}</td>
+                <td className="px-5 py-3 text-right text-muted">{r.swpAmount > 0 ? formatCr(r.swpAmount) : '—'}</td>
+                <td className="px-5 py-3 text-right text-muted">{r.taxPlanSalesFY > 0 ? formatCr(r.taxPlanSalesFY) : '—'}</td>
+                <td className="px-5 py-3 text-right text-muted">{r.pmsSalesFY > 0 ? formatCr(r.pmsSalesFY) : '—'}</td>
+                <td className="px-5 py-3 text-right text-muted">{r.fdBondSalesFY > 0 ? formatCr(r.fdBondSalesFY) : '—'}</td>
                 <td className="px-5 py-3 text-right">
                   <Badge tone="red">{formatCr(r.redemptionsFY)}</Badge>
                 </td>

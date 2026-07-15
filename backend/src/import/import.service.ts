@@ -128,6 +128,16 @@ export class ImportService {
             nfoSipSalesFY: toDecimal(row['NFO SIP Sales (FY) (₹)']),
             nfoSipSalesCY: toDecimal(row['NFO SIP Sales (CY) (₹)']),
 
+            swpCount: toInt(row['Live SWP Count']),
+            swpAmount: toDecimal(row['Live SWP Amount (₹)']),
+            topUpSipAmount: toDecimal(row['Top-Up SIP Amount (₹)']),
+            taxPlanSalesFY: toDecimal(row['Sales In TAX Plans (FY) (₹)']),
+            taxPlanSalesCY: toDecimal(row['Sales In TAX Plans (CY) (₹)']),
+            pmsSalesFY: toDecimal(row['NJ PMS Sales (FY) (₹)']),
+            pmsSalesCY: toDecimal(row['NJ PMS Sales (CY) (₹)']),
+            fdBondSalesFY: toDecimal(row['FD/Bond Sales (FY) (₹)']),
+            fdBondSalesCY: toDecimal(row['FD/Bond Sales (CY) (₹)']),
+
             totalNeedsIdentified: toInt(row['Total needs Identified']),
             mappedNeedWithGap: toInt(row['No. of Mapped Need with gap']),
             totalLumpsumGapAmount: toDecimal(row['Total Lumpsum Gap Amount (₹)']),

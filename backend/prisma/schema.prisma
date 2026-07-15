@@ -178,6 +178,17 @@ model Investor {
   nfoSipSalesFY     Decimal? @db.Decimal(18, 2)
   nfoSipSalesCY     Decimal? @db.Decimal(18, 2)
 
+  // Additional sales dimensions — SWP, top-up SIPs, tax-saving sales, PMS/FD sales
+  swpCount          Int?
+  swpAmount         Decimal? @db.Decimal(18, 2)
+  topUpSipAmount    Decimal? @db.Decimal(18, 2)
+  taxPlanSalesFY    Decimal? @db.Decimal(18, 2)
+  taxPlanSalesCY    Decimal? @db.Decimal(18, 2)
+  pmsSalesFY        Decimal? @db.Decimal(18, 2)
+  pmsSalesCY        Decimal? @db.Decimal(18, 2)
+  fdBondSalesFY     Decimal? @db.Decimal(18, 2)
+  fdBondSalesCY     Decimal? @db.Decimal(18, 2)
+
   // Needs & gap analysis — drives cross-sell opportunity detection
   totalNeedsIdentified   Int?
   mappedNeedWithGap      Int?

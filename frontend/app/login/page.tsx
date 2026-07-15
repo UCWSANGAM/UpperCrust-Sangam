@@ -23,6 +23,13 @@ export default function LoginPage() {
     const interval = setInterval(() => {
       setQuoteIndex((i) => (i + 1) % QUOTES.length);
     }, 6000);
+
+    const expiredMsg = sessionStorage.getItem('sessionExpiredMessage');
+    if (expiredMsg) {
+      setError(expiredMsg);
+      sessionStorage.removeItem('sessionExpiredMessage');
+    }
+
     return () => clearInterval(interval);
   }, []);
 
@@ -32,6 +39,7 @@ export default function LoginPage() {
     try {
       const { data } = await api.post('/auth/login', { email, password });
       sessionStorage.setItem('accessToken', data.accessToken);
+      sessionStorage.setItem('refreshToken', data.refreshToken);
       sessionStorage.setItem('userName', data.user?.name || '');
       router.push('/dashboard');
     } catch {

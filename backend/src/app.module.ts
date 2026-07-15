@@ -6,6 +6,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { InvestorsModule } from './investors/investors.module';
 import { ImportModule } from './import/import.module';
+import { UsersModule } from './users/users.module';
+import { TasksModule } from './tasks/tasks.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -16,6 +19,9 @@ import { HealthController } from './health.controller';
     AuthModule,
     InvestorsModule,
     ImportModule,
+    UsersModule,
+    TasksModule,
+    ReviewsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

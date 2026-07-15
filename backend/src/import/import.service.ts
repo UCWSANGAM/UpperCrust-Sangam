@@ -9,14 +9,33 @@ export class ImportService {
 
   constructor(private prisma: PrismaService, private crypto: FieldEncryptionService) {}
 
-  // Investor list export: one row per investor, rich AUM/XIRR fields
-  async importInvestorList(buffer: Buffer, ownerId: string) {
+  // Single-source daily export: one row per investor, covers profile, AUM, sales,
+  // and needs-gap data all at once. RM ownership comes from "Partner/Employee",
+  // matched against real User accounts — never from whoever uploaded the file.
+  async importInvestorList(buffer: Buffer, fallbackOwnerId: string) {
     const wb = XLSX.read(buffer, { type: 'buffer' });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: null });
 
+    const activeUsers = await this.prisma.user.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true },
+    });
+
+    const unmatchedNames = new Set<string>();
+
+    function resolveOwner(partnerField: string | null): string | undefined {
+      if (!partnerField) return undefined;
+      const haystack = partnerField.toLowerCase();
+      const match = activeUsers.find((u) => haystack.includes(u.name.toLowerCase()));
+      if (match) return match.id;
+      unmatchedNames.add(partnerField.trim());
+      return undefined;
+    }
+
     let created = 0;
     let updated = 0;
+    const now = new Date();
 
     for (const row of rows) {
       const name = row['Investor'];
@@ -25,21 +44,47 @@ export class ImportService {
       const ucc = row['UCC'] ? String(row['UCC']) : undefined;
       const pan = row['PAN'] ? String(row['PAN']) : undefined;
       const mobile = row['Investor Mobile No.'] ? String(row['Investor Mobile No.']) : undefined;
+      const matchedOwnerId = resolveOwner(row['Partner/Employee'] ? String(row['Partner/Employee']) : null);
 
       const data = {
         name,
+        email: row['Investor E-Mail Id.'] ? String(row['Investor E-Mail Id.']) : undefined,
+        location: row['Location'] ? String(row['Location']) : undefined,
         familyGroup: row['Group'] ? String(row['Group']) : undefined,
         taxStatus: row['Tax Status'] ? String(row['Tax Status']) : undefined,
         gender: row['Gender'] ? String(row['Gender']) : undefined,
+        dateOfBirth: parseDate(row['Date of Birth']),
+
         totalMfAum: toDecimal(row['Total MF AUM (₹)']),
         equityAum: toDecimal(row['Equity AUM (₹)']),
         debtAum: toDecimal(row['Debt AUM (₹)']),
+        cashAum: toDecimal(row['Cash AUM (₹)']),
+        goldAum: toDecimal(row['Gold  AUM (₹)']),
+        pmsAum: toDecimal(row['PMS AUM (₹)']),
+        totalAumMfPms: toDecimal(row['Total AUM - MF + PMS (₹)']),
+
         xirrEquity: toDecimal(row['Investor XIRR - MF Equity']),
         xirrDebt: toDecimal(row['Investor XIRR - MF Debt']),
         xirrTotal: toDecimal(row['Investor XIRR - MF Total']),
+
+        netSalesFY: toDecimal(row['MF Net Sales (FY) (₹)']),
+        grossSalesFY: toDecimal(row['MF Gross Sales (FY) (₹)']),
+        redemptionsFY: toDecimal(row['MF Redemptions (FY) (₹)']),
+        netSalesCY: toDecimal(row['MF Net Sales (CY) (₹)']),
+        grossSalesCY: toDecimal(row['MF Gross Sales (CY) (₹)']),
+        redemptionsCY: toDecimal(row['MF Redemptions(CY) (₹)']),
+        liveSipAmount: toDecimal(row['Live SIP Amount']),
+        liveSipCount: toInt(row['No. of Live SIPs']),
+
+        totalNeedsIdentified: toInt(row['Total needs Identified']),
+        mappedNeedWithGap: toInt(row['No. of Mapped Need with gap']),
+        totalLumpsumGapAmount: toDecimal(row['Total Lumpsum Gap Amount (₹)']),
+        totalSipGapAmount: toDecimal(row['Total SIP Gap Amount (₹)']),
+
         panEncrypted: pan ? this.crypto.encrypt(pan) : undefined,
         mobileEncrypted: mobile ? this.crypto.encrypt(mobile) : undefined,
-        ownerId,
+        lastImportedAt: now,
+        ...(matchedOwnerId ? { ownerId: matchedOwnerId } : {}),
       };
 
       const existing = ucc ? await this.prisma.investor.findUnique({ where: { ucc } }) : null;
@@ -48,20 +93,21 @@ export class ImportService {
         await this.prisma.investor.update({ where: { id: existing.id }, data });
         updated++;
       } else {
-        await this.prisma.investor.create({ data: { ...data, ucc } });
+        await this.prisma.investor.create({
+          data: { ...data, ucc, ownerId: matchedOwnerId || fallbackOwnerId },
+        });
         created++;
       }
     }
 
-    this.logger.log(`Investor list import: ${created} created, ${updated} updated`);
-    return { created, updated, total: rows.length };
+    this.logger.log(`Investor import: ${created} created, ${updated} updated, ${unmatchedNames.size} unmatched RM names`);
+    return { created, updated, total: rows.length, unmatchedRMs: Array.from(unmatchedNames) };
   }
 
-  // Live Folio Report: one row per folio, linked to investor by name (fallback) or UCC
+  // Kept for legacy folio-level detail if a separate folio export is ever uploaded again
   async importFolioReport(buffer: Buffer) {
     const wb = XLSX.read(buffer, { type: 'buffer' });
     const sheet = wb.Sheets[wb.SheetNames[0]];
-    // First row is a title row in this export — header is row 2
     const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: null, range: 1 });
 
     let created = 0;
@@ -100,7 +146,6 @@ export class ImportService {
       created++;
     }
 
-    this.logger.log(`Folio report import: ${created} created, ${skipped} skipped (investor not found)`);
     return { created, skipped, total: rows.length };
   }
 }
@@ -109,4 +154,20 @@ function toDecimal(value: any): number | undefined {
   if (value === null || value === undefined || value === '') return undefined;
   const n = parseFloat(String(value).replace(/,/g, ''));
   return isNaN(n) ? undefined : n;
+}
+
+function toInt(value: any): number | undefined {
+  if (value === null || value === undefined || value === '') return undefined;
+  const n = parseInt(String(value), 10);
+  return isNaN(n) ? undefined : n;
+}
+
+function parseDate(value: any): Date | undefined {
+  if (!value || value === '-') return undefined;
+  // Source format is DD-MM-YYYY
+  const parts = String(value).split('-');
+  if (parts.length !== 3) return undefined;
+  const [dd, mm, yyyy] = parts;
+  const date = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+  return isNaN(date.getTime()) ? undefined : date;
 }

@@ -34,6 +34,10 @@ model User {
   refreshTokens RefreshToken[]
   auditLogs     AuditLog[]
   devices       DeviceSession[]
+  notes         Note[]
+  assignedTasks Task[] @relation("AssignedTasks")
+  createdTasks  Task[] @relation("CreatedTasks")
+  quarterlyReviews QuarterlyReview[]
 }
 
 // Persistent revocation store — supports instant logout / force logout
@@ -77,6 +81,8 @@ model Investor {
   id                String   @id @default(uuid())
   ucc               String?  @unique
   name              String
+  email             String?
+  location          String?
   panEncrypted      String?  // stored AES-256 encrypted at the application layer, never plaintext
   mobileEncrypted   String?
   dateOfBirth       DateTime?
@@ -84,20 +90,91 @@ model Investor {
   taxStatus         String?
   ownerId           String?  // RM/partner owning this investor
   familyGroup       String?
+
   totalMfAum        Decimal? @db.Decimal(18, 2)
   equityAum         Decimal? @db.Decimal(18, 2)
   debtAum           Decimal? @db.Decimal(18, 2)
+  cashAum           Decimal? @db.Decimal(18, 2)
+  goldAum           Decimal? @db.Decimal(18, 2)
+  pmsAum            Decimal? @db.Decimal(18, 2)
+  totalAumMfPms     Decimal? @db.Decimal(18, 2)
+
   xirrEquity        Decimal? @db.Decimal(6, 2)
   xirrDebt          Decimal? @db.Decimal(6, 2)
   xirrTotal         Decimal? @db.Decimal(6, 2)
+
+  // Sales tracking — fiscal year (FY) and calendar year (CY)
+  netSalesFY        Decimal? @db.Decimal(18, 2)
+  grossSalesFY      Decimal? @db.Decimal(18, 2)
+  redemptionsFY     Decimal? @db.Decimal(18, 2)
+  netSalesCY        Decimal? @db.Decimal(18, 2)
+  grossSalesCY      Decimal? @db.Decimal(18, 2)
+  redemptionsCY     Decimal? @db.Decimal(18, 2)
+  liveSipAmount     Decimal? @db.Decimal(18, 2)
+  liveSipCount      Int?
+
+  // Needs & gap analysis — drives cross-sell opportunity detection
+  totalNeedsIdentified   Int?
+  mappedNeedWithGap      Int?
+  totalLumpsumGapAmount  Decimal? @db.Decimal(18, 2)
+  totalSipGapAmount      Decimal? @db.Decimal(18, 2)
+
   healthScore       Int?
+  lastImportedAt    DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   folios            Folio[]
+  notes             Note[]
+  tasks             Task[]
+  quarterlyReviews  QuarterlyReview[]
 
   @@index([ownerId])
   @@index([familyGroup])
+}
+
+model Note {
+  id          String   @id @default(uuid())
+  investorId  String
+  investor    Investor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  content     String
+  createdAt   DateTime @default(now())
+
+  @@index([investorId])
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskType {
+  TASK
+  MEETING
+}
+
+model Task {
+  id          String     @id @default(uuid())
+  type        TaskType   @default(TASK)
+  title       String
+  notes       String?
+  dueAt       DateTime?
+  status      TaskStatus @default(OPEN)
+  investorId  String?
+  investor    Investor?  @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  assigneeId  String
+  assignee    User       @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  createdById String
+  createdBy   User       @relation("CreatedTasks", fields: [createdById], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([assigneeId])
+  @@index([investorId])
+  @@index([status])
 }
 
 model Folio {
@@ -115,4 +192,25 @@ model Folio {
   createdAt      DateTime @default(now())
 
   @@index([investorId])
+}
+
+// One review per investor per quarter — RM confirms contact was made, discusses
+// cross-sell, and logs any needs/action items. Enforced unique so it can't be duplicated.
+model QuarterlyReview {
+  id                  String   @id @default(uuid())
+  investorId          String
+  investor            Investor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  reviewerId          String
+  reviewer            User     @relation(fields: [reviewerId], references: [id])
+  year                Int
+  quarter             Int      // 1-4
+  contactMade         Boolean  @default(false)
+  riskProfileReviewed Boolean  @default(false)
+  crossSellDiscussed  Boolean  @default(false)
+  notes               String?
+  actionItems         String?
+  createdAt           DateTime @default(now())
+
+  @@unique([investorId, year, quarter])
+  @@index([reviewerId])
 }

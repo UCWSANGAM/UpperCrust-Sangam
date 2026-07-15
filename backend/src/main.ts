@@ -5,7 +5,9 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
+  console.log('Booting: creating Nest application...');
   const app = await NestFactory.create(AppModule, { logger: ['error', 'warn', 'log'] });
+  console.log('Booting: Nest application created, configuring middleware...');
 
   // Security headers
   app.use(helmet());

@@ -223,6 +223,72 @@ function QuarterlyReviewBox({ investorId }: { investorId: string }) {
   );
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  HOLDS: 'Holds',
+  NOT_HOLDING: 'Opportunity',
+  NOT_ELIGIBLE: 'Not eligible',
+};
+
+const STATUS_TONE: Record<string, 'green' | 'gold' | 'gray'> = {
+  HOLDS: 'green',
+  NOT_HOLDING: 'gold',
+  NOT_ELIGIBLE: 'gray',
+};
+
+function ProductMatrix({ investorId }: { investorId: string }) {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  function load() {
+    api.get(`/products/investor/${investorId}`).then(({ data }) => setRows(data)).finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [investorId]);
+
+  async function cycleStatus(productId: string, current: string) {
+    const order = ['NOT_HOLDING', 'HOLDS', 'NOT_ELIGIBLE'];
+    const next = order[(order.indexOf(current) + 1) % order.length];
+    await api.put(`/products/investor/${investorId}/product/${productId}`, { status: next });
+    load();
+  }
+
+  return (
+    <div className="mt-10">
+      <h2 className="font-display text-xl text-ink">Product holdings</h2>
+      <p className="mt-1 text-sm text-muted">Click a status to cycle it — Opportunity → Holds → Not eligible</p>
+      {loading ? (
+        <p className="mt-3 text-sm text-muted">Loading...</p>
+      ) : (
+        <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3">
+          {rows.map((r) => (
+            <button
+              key={r.productId}
+              onClick={() => cycleStatus(r.productId, r.status)}
+              className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-left text-xs hover:border-accent"
+            >
+              <span className="text-ink">{r.productName}</span>
+              <span
+                className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                  r.status === 'HOLDS'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : r.status === 'NOT_ELIGIBLE'
+                    ? 'bg-gray-100 text-gray-500'
+                    : 'bg-accent/10 text-accentDark'
+                }`}
+              >
+                {STATUS_LABELS[r.status]}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function InvestorDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [investor, setInvestor] = useState<InvestorDetail | null>(null);
@@ -330,6 +396,7 @@ export default function InvestorDetailPage() {
       </div>
 
       <ActivityFeed investorId={investor.id} />
+      <ProductMatrix investorId={investor.id} />
       <QuarterlyReviewBox investorId={investor.id} />
     </div>
   );

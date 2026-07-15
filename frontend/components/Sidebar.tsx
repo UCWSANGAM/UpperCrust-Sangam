@@ -7,17 +7,21 @@ import {
   TrendingUp,
   ClipboardCheck,
   CalendarClock,
+  CalendarDays,
   Upload,
   UserCog,
   LogOut,
+  Sparkles,
 } from 'lucide-react';
 
 const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/investors', label: 'Investors', icon: Users },
   { href: '/sales', label: 'Sales', icon: TrendingUp },
+  { href: '/cross-sell', label: 'Cross-Sell', icon: Sparkles },
   { href: '/reviews', label: 'Quarterly Reviews', icon: ClipboardCheck },
   { href: '/tasks', label: 'Tasks & Meetings', icon: CalendarClock },
+  { href: '/calendar', label: 'Calendar', icon: CalendarDays },
   { href: '/import', label: 'Data Import', icon: Upload },
   { href: '/users', label: 'Users', icon: UserCog },
 ];

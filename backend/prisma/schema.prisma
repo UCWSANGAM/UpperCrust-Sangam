@@ -38,6 +38,7 @@ model User {
   assignedTasks Task[] @relation("AssignedTasks")
   createdTasks  Task[] @relation("CreatedTasks")
   quarterlyReviews QuarterlyReview[]
+  productUpdates   InvestorProduct[]
 }
 
 // Persistent revocation store — supports instant logout / force logout
@@ -128,6 +129,7 @@ model Investor {
   notes             Note[]
   tasks             Task[]
   quarterlyReviews  QuarterlyReview[]
+  productHoldings   InvestorProduct[]
 
   @@index([ownerId])
   @@index([familyGroup])
@@ -142,6 +144,40 @@ model Note {
   content     String
   createdAt   DateTime @default(now())
 
+  @@index([investorId])
+}
+
+// Fixed catalog of products the firm sells — seeded once, editable by admins.
+model Product {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  category    String?
+  sortOrder   Int      @default(0)
+
+  holdings    InvestorProduct[]
+}
+
+// One row per investor per product — tracks current holding status and, when relevant,
+// AUM in that product. This is what powers the cross-sell eligibility matrix.
+enum ProductStatus {
+  HOLDS
+  NOT_HOLDING
+  NOT_ELIGIBLE
+}
+
+model InvestorProduct {
+  id          String        @id @default(uuid())
+  investorId  String
+  investor    Investor      @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  status      ProductStatus @default(NOT_HOLDING)
+  amount      Decimal?      @db.Decimal(18, 2)
+  updatedById String?
+  updatedBy   User?         @relation(fields: [updatedById], references: [id])
+  updatedAt   DateTime      @updatedAt
+
+  @@unique([investorId, productId])
   @@index([investorId])
 }
 

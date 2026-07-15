@@ -29,6 +29,12 @@ export class ReviewsController {
   }
 
   @Roles(...ALL_ROLES)
+  @Get('compliance')
+  compliance(@CurrentUser() user: { id: string; role: string }) {
+    return this.reviews.complianceReport(user);
+  }
+
+  @Roles(...ALL_ROLES)
   @Get('investor/:investorId')
   listForInvestor(@Param('investorId') investorId: string, @CurrentUser() user: { id: string; role: string }) {
     return this.reviews.listForInvestor(investorId, user);

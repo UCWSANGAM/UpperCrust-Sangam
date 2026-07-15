@@ -78,4 +78,34 @@ export class ReviewsService {
       total: investors.length,
     };
   }
+
+  // Firm-wide compliance snapshot: for managers/admins, how each RM is tracking against
+  // the "review every client once a quarter" mandate.
+  async complianceReport(user: { id: string; role: string }) {
+    const isPrivileged = ['SUPER_ADMIN', 'ADMIN', 'BRANCH_MANAGER'].includes(user.role);
+    if (!isPrivileged) {
+      const own = await this.dueThisQuarter(user);
+      return [{ rmId: user.id, rmName: 'You', total: own.total, completed: own.completed, pending: own.pending.length }];
+    }
+
+    const { year, quarter } = currentQuarter();
+    const rms = await this.prisma.user.findMany({
+      where: { isActive: true, role: { in: ['RELATIONSHIP_MANAGER', 'BRANCH_MANAGER'] } },
+      select: { id: true, name: true },
+    });
+
+    const rows = await Promise.all(
+      rms.map(async (rm) => {
+        const investors = await this.prisma.investor.findMany({
+          where: { ownerId: rm.id },
+          select: { quarterlyReviews: { where: { year, quarter }, select: { id: true } } },
+        });
+        const total = investors.length;
+        const completed = investors.filter((i) => i.quarterlyReviews.length > 0).length;
+        return { rmId: rm.id, rmName: rm.name, total, completed, pending: total - completed };
+      }),
+    );
+
+    return rows.sort((a, b) => b.total - a.total);
+  }
 }

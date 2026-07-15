@@ -23,12 +23,20 @@ export class ImportService {
       select: { id: true, name: true },
     });
 
-    const uccList = rows.map((r) => (r['UCC'] ? String(r['UCC']) : null)).filter(Boolean) as string[];
-    const existingInvestors = await this.prisma.investor.findMany({
+    const uccList = rows.map((r) => cleanValue(r['UCC'])).filter(Boolean) as string[];
+    const existingByUccList = await this.prisma.investor.findMany({
       where: { ucc: { in: uccList } },
       select: { id: true, ucc: true },
     });
-    const existingByUcc = new Map(existingInvestors.map((i) => [i.ucc, i.id]));
+    const existingByUcc = new Map(existingByUccList.map((i) => [i.ucc, i.id]));
+
+    // Fallback for the many investors with no real UCC in this export — match by name
+    // so a daily re-upload updates them instead of creating duplicates every time.
+    const existingByNameList = await this.prisma.investor.findMany({
+      where: { ucc: null },
+      select: { id: true, name: true },
+    });
+    const existingByName = new Map(existingByNameList.map((i) => [i.name.trim().toLowerCase(), i.id]));
 
     const unmatchedNames = new Set<string>();
     const resolveOwner = (partnerField: string | null): string | undefined => {
@@ -53,9 +61,9 @@ export class ImportService {
           const name = row['Investor'];
           if (!name) return;
 
-          const ucc = row['UCC'] ? String(row['UCC']) : undefined;
-          const pan = row['PAN'] ? String(row['PAN']) : undefined;
-          const mobile = row['Investor Mobile No.'] ? String(row['Investor Mobile No.']) : undefined;
+          const ucc = cleanValue(row['UCC']);
+          const pan = cleanValue(row['PAN']);
+          const mobile = cleanValue(row['Investor Mobile No.']);
           const matchedOwnerId = resolveOwner(row['Partner/Employee'] ? String(row['Partner/Employee']) : null);
 
           const data = {
@@ -99,7 +107,7 @@ export class ImportService {
             ...(matchedOwnerId ? { ownerId: matchedOwnerId } : {}),
           };
 
-          const existingId = ucc ? existingByUcc.get(ucc) : undefined;
+          const existingId = ucc ? existingByUcc.get(ucc) : existingByName.get(String(name).trim().toLowerCase());
 
           if (existingId) {
             await this.prisma.investor.update({ where: { id: existingId }, data });
@@ -164,6 +172,15 @@ export class ImportService {
 
     return { created, skipped, total: rows.length };
   }
+}
+
+// Source file uses "-" as a placeholder for "no value" in text fields — treat it as null,
+// not as a literal value (this was crashing UCC/PAN uniqueness on import).
+function cleanValue(value: any): string | undefined {
+  if (value === null || value === undefined) return undefined;
+  const str = String(value).trim();
+  if (str === '' || str === '-') return undefined;
+  return str;
 }
 
 function toDecimal(value: any): number | undefined {

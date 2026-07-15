@@ -6,8 +6,10 @@ const TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/investors': 'Investors',
   '/sales': 'Sales',
+  '/cross-sell': 'Cross-Sell Opportunities',
   '/reviews': 'Quarterly Reviews',
   '/tasks': 'Tasks & Meetings',
+  '/calendar': 'Calendar',
   '/import': 'Data Import',
   '/users': 'Users',
 };

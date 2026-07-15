@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+* {
+  font-feature-settings: 'ss01' on, 'cv01' on;
+}
+
+body {
+  background-color: #FAF7F0;
+  color: #1F2430;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+
+h1, h2, h3 {
+  letter-spacing: -0.015em;
+}
+
+table {
+  font-variant-numeric: tabular-nums;
+}

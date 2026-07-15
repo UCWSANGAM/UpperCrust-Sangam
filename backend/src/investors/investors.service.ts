@@ -50,10 +50,10 @@ export class InvestorsService {
     return {
       totalInvestors: count,
       totalFolios: folioCount,
-      totalAum: aggregate._sum.totalMfAum || 0,
-      equityAum: aggregate._sum.equityAum || 0,
-      debtAum: aggregate._sum.debtAum || 0,
-      avgXirr: aggregate._avg.xirrTotal || 0,
+      totalAum: Number(aggregate._sum.totalMfAum) || 0,
+      equityAum: Number(aggregate._sum.equityAum) || 0,
+      debtAum: Number(aggregate._sum.debtAum) || 0,
+      avgXirr: Number(aggregate._avg.xirrTotal) || 0,
       topInvestors: topInvestors.map((i) => ({ name: i.name, aum: Number(i.totalMfAum) || 0 })),
       familyGroups: familyGroups.map((g) => ({
         name: g.familyGroup || 'Unassigned',
@@ -66,11 +66,17 @@ export class InvestorsService {
   // Enforced at the query layer, not just the UI.
   async findAll(user: { id: string; role: string }) {
     const isPrivileged = ['SUPER_ADMIN', 'ADMIN', 'BRANCH_MANAGER'].includes(user.role);
-    return this.prisma.investor.findMany({
+    const investors = await this.prisma.investor.findMany({
       where: isPrivileged ? {} : { ownerId: user.id },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
+    // Prisma Decimal fields serialize as strings — convert to numbers so the frontend can call .toFixed()
+    return investors.map((inv) => ({
+      ...inv,
+      totalMfAum: inv.totalMfAum ? Number(inv.totalMfAum) : null,
+      xirrTotal: inv.xirrTotal ? Number(inv.xirrTotal) : null,
+    }));
   }
 
   async findOne(id: string, user: { id: string; role: string }) {
@@ -82,13 +88,22 @@ export class InvestorsService {
       throw new NotFoundException('Investor not found'); // don't leak existence to unauthorized users
     }
 
-    // Decrypt only at the point of authorized display
+    // Decrypt only at the point of authorized display; also convert Decimal fields to numbers
     return {
       ...investor,
       pan: investor.panEncrypted ? this.crypto.decrypt(investor.panEncrypted) : null,
       mobile: investor.mobileEncrypted ? this.crypto.decrypt(investor.mobileEncrypted) : null,
       panEncrypted: undefined,
       mobileEncrypted: undefined,
+      totalMfAum: investor.totalMfAum ? Number(investor.totalMfAum) : null,
+      equityAum: investor.equityAum ? Number(investor.equityAum) : null,
+      debtAum: investor.debtAum ? Number(investor.debtAum) : null,
+      xirrTotal: investor.xirrTotal ? Number(investor.xirrTotal) : null,
+      folios: investor.folios.map((f) => ({
+        ...f,
+        currentValue: f.currentValue ? Number(f.currentValue) : null,
+        balanceUnits: f.balanceUnits ? Number(f.balanceUnits) : null,
+      })),
     };
   }
 

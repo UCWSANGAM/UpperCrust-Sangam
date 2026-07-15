@@ -12,6 +12,7 @@ import {
   UserCog,
   LogOut,
   Sparkles,
+  MessageCircle,
 } from 'lucide-react';
 
 const NAV = [
@@ -22,6 +23,7 @@ const NAV = [
   { href: '/reviews', label: 'Quarterly Reviews', icon: ClipboardCheck },
   { href: '/tasks', label: 'Tasks & Meetings', icon: CalendarClock },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
+  { href: '/chat', label: 'Team Chat', icon: MessageCircle },
   { href: '/import', label: 'Data Import', icon: Upload },
   { href: '/users', label: 'Users', icon: UserCog },
 ];

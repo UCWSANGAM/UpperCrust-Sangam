@@ -3,6 +3,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Card, PageHeader, Badge, Avatar } from '@/components/ui';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+
+const GOLD = '#B8935A';
+const NAVY = '#14171B';
 
 type Due = {
   year: number;
@@ -49,8 +53,33 @@ export default function ReviewsPage() {
     <div className="p-8">
       <PageHeader title="Quarterly reviews" subtitle={`Q${due.quarter} ${due.year} — ${due.completed} of ${due.total} clients reviewed (${progress}%)`} />
 
-      <div className="mb-8 h-2 w-full max-w-md overflow-hidden rounded-full bg-border">
-        <div className="h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
+      <div className="mb-8 flex items-center gap-6">
+        <div className="w-40">
+          <ResponsiveContainer width="100%" height={100}>
+            <PieChart>
+              <Pie
+                data={[
+                  { name: 'Reviewed', value: due.completed },
+                  { name: 'Pending', value: due.total - due.completed },
+                ]}
+                dataKey="value"
+                innerRadius={32}
+                outerRadius={48}
+                paddingAngle={2}
+              >
+                <Cell fill={GOLD} />
+                <Cell fill={NAVY} />
+              </Pie>
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="flex-1">
+          <div className="h-2 w-full max-w-md overflow-hidden rounded-full bg-border">
+            <div className="h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
+          </div>
+          <p className="mt-2 text-[12px] text-muted">{due.completed} reviewed, {due.total - due.completed} pending</p>
+        </div>
       </div>
 
       {isTeamView && (

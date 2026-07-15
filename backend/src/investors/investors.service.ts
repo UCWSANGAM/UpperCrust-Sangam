@@ -269,4 +269,44 @@ export class InvestorsService {
 
     return results;
   }
+
+  // Birthdays and anniversaries in the next 30 days — respects row-level scoping
+  async upcomingOccasions(user: { id: string; role: string }) {
+    const isPrivileged = ['SUPER_ADMIN', 'ADMIN', 'BRANCH_MANAGER'].includes(user.role);
+    const where = isPrivileged ? {} : { ownerId: user.id };
+
+    const investors = await this.prisma.investor.findMany({
+      where: {
+        ...where,
+        OR: [{ dateOfBirth: { not: null } }, { anniversaryDate: { not: null } }],
+      },
+      select: { id: true, name: true, dateOfBirth: true, anniversaryDate: true },
+    });
+
+    const today = new Date();
+    const todayMonthDay = today.getMonth() * 100 + today.getDate();
+
+    function daysUntil(date: Date): number {
+      const monthDay = date.getMonth() * 100 + date.getDate();
+      const thisYear = new Date(today.getFullYear(), date.getMonth(), date.getDate());
+      let diff = Math.round((thisYear.getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / 86400000);
+      if (diff < 0) diff += 365; // roll to next year
+      return diff;
+    }
+
+    const results: { investorId: string; name: string; type: 'birthday' | 'anniversary'; date: Date; daysUntil: number }[] = [];
+
+    for (const inv of investors) {
+      if (inv.dateOfBirth) {
+        const d = daysUntil(inv.dateOfBirth);
+        if (d <= 30) results.push({ investorId: inv.id, name: inv.name, type: 'birthday', date: inv.dateOfBirth, daysUntil: d });
+      }
+      if (inv.anniversaryDate) {
+        const d = daysUntil(inv.anniversaryDate);
+        if (d <= 30) results.push({ investorId: inv.id, name: inv.name, type: 'anniversary', date: inv.anniversaryDate, daysUntil: d });
+      }
+    }
+
+    return results.sort((a, b) => a.daysUntil - b.daysUntil).slice(0, 30);
+  }
 }

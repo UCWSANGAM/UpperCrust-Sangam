@@ -38,6 +38,12 @@ export class InvestorsController {
   }
 
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.BRANCH_MANAGER, Role.RELATIONSHIP_MANAGER, Role.OPERATIONS, Role.COMPLIANCE, Role.RESEARCH)
+  @Get('occasions')
+  occasions(@CurrentUser() user: { id: string; role: string }) {
+    return this.investors.upcomingOccasions(user);
+  }
+
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.BRANCH_MANAGER, Role.RELATIONSHIP_MANAGER, Role.OPERATIONS, Role.COMPLIANCE, Role.RESEARCH)
   @Get()
   findAll(@CurrentUser() user: { id: string; role: string }) {
     return this.investors.findAll(user);

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { Card, PageHeader, Badge, Avatar, StatCard } from '@/components/ui';
 import { TrendingUp, Users, Wallet } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 type RmSales = {
   rmId: string;
@@ -17,8 +18,13 @@ type RmSales = {
   redemptionsCY: number;
 };
 
+const GOLD = '#B8935A';
+
 function formatCr(value: number) {
   return `₹${(value / 10000000).toFixed(2)} Cr`;
+}
+function toCr(value: number) {
+  return Number((value / 10000000).toFixed(2));
 }
 
 export default function SalesPage() {
@@ -52,6 +58,35 @@ export default function SalesPage() {
         <StatCard label="Net Sales FY" value={formatCr(totals.netSalesFY)} icon={TrendingUp} />
         <StatCard label="Net Sales CY" value={formatCr(totals.netSalesCY)} icon={Users} />
       </div>
+
+      {rows.length > 0 && (
+        <Card className="mb-6 p-5">
+          <p className="mb-4 text-[13px] font-medium text-ink">Net sales FY by RM</p>
+          <div className="space-y-3">
+            {[...rows]
+              .sort((a, b) => b.netSalesFY - a.netSalesFY)
+              .slice(0, 8)
+              .map((r, i) => {
+                const max = Math.max(...rows.map((x) => x.netSalesFY), 1);
+                const pct = Math.max(6, (r.netSalesFY / max) * 100);
+                return (
+                  <div key={r.rmId} className="flex items-center gap-3">
+                    <span className="w-28 shrink-0 truncate text-[12px] text-ink">{r.rmName}</span>
+                    <div className="relative h-6 flex-1 overflow-hidden rounded bg-background">
+                      <div
+                        className="h-full rounded transition-all"
+                        style={{ width: `${pct}%`, backgroundColor: i === 0 ? '#14171B' : '#B8935A' }}
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-ink">
+                        {formatCr(r.netSalesFY)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </Card>
+      )}
 
       <Card className="overflow-hidden">
         <table className="w-full text-[13px]">

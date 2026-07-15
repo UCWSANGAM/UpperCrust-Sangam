@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Card, PageHeader, Badge } from '@/components/ui';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 type Board = {
   productId: string;
@@ -11,6 +12,8 @@ type Board = {
   gapCount: number;
   topGaps: { investorId: string; name: string; aum: number }[];
 };
+
+const GOLD = '#B8935A';
 
 function formatCr(value: number) {
   if (!value) return '—';
@@ -28,6 +31,20 @@ export default function CrossSellPage() {
   return (
     <div className="p-8">
       <PageHeader title="Cross-sell opportunities" subtitle="Investors not currently holding each product, ranked by AUM" />
+
+      {board.length > 0 && (
+        <Card className="mb-6 p-5">
+          <p className="mb-3 text-[13px] font-medium text-ink">Opportunity gaps by product</p>
+          <ResponsiveContainer width="100%" height={Math.max(160, board.length * 32)}>
+            <BarChart data={board.map((p) => ({ name: p.productName, gaps: p.gapCount }))} layout="vertical" margin={{ left: 8 }}>
+              <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={200} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+              <Bar dataKey="gaps" fill={GOLD} radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
 
       <div className="space-y-3">
         {board.map((p) => (

@@ -32,6 +32,7 @@ export default function LoginPage() {
     try {
       const { data } = await api.post('/auth/login', { email, password });
       sessionStorage.setItem('accessToken', data.accessToken);
+      sessionStorage.setItem('userName', data.user?.name || '');
       router.push('/dashboard');
     } catch {
       setError('Invalid credentials');

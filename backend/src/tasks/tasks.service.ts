@@ -55,4 +55,30 @@ export class TasksService {
       include: { assignee: { select: { name: true } }, investor: { select: { name: true } } },
     });
   }
+
+  private async assertTaskAccess(taskId: string, user: { id: string; role: string }) {
+    const task = await this.prisma.task.findUnique({ where: { id: taskId }, select: { assigneeId: true, createdById: true } });
+    if (!task) throw new NotFoundException('Task not found');
+    const isPrivileged = ['SUPER_ADMIN', 'ADMIN', 'BRANCH_MANAGER'].includes(user.role);
+    if (!isPrivileged && task.assigneeId !== user.id && task.createdById !== user.id) {
+      throw new NotFoundException('Task not found');
+    }
+  }
+
+  async listComments(taskId: string, user: { id: string; role: string }) {
+    await this.assertTaskAccess(taskId, user);
+    return this.prisma.taskComment.findMany({
+      where: { taskId },
+      include: { author: { select: { name: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async addComment(taskId: string, content: string, user: { id: string; role: string }) {
+    await this.assertTaskAccess(taskId, user);
+    return this.prisma.taskComment.create({
+      data: { taskId, authorId: user.id, content },
+      include: { author: { select: { name: true } } },
+    });
+  }
 }

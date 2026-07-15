@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { api } from '@/lib/api';
 import { Card, PageHeader, Badge, Avatar } from '@/components/ui';
 
@@ -13,6 +14,9 @@ type Investor = {
   xirrTotal?: number;
 };
 
+const GOLD = '#B8935A';
+const NAVY = '#14171B';
+
 function formatCr(value?: number) {
   if (!value) return '—';
   return `₹${(value / 10000000).toFixed(2)} Cr`;
@@ -22,6 +26,14 @@ function xirrTone(x?: number): 'green' | 'red' | 'gray' {
   if (x === undefined || x === null) return 'gray';
   return x >= 0 ? 'green' : 'red';
 }
+
+const TIERS = [
+  { label: '< 25L', min: 0, max: 2500000 },
+  { label: '25L–1Cr', min: 2500000, max: 10000000 },
+  { label: '1Cr–5Cr', min: 10000000, max: 50000000 },
+  { label: '5Cr–10Cr', min: 50000000, max: 100000000 },
+  { label: '10Cr+', min: 100000000, max: Infinity },
+];
 
 export default function InvestorsPage() {
   const [investors, setInvestors] = useState<Investor[]>([]);
@@ -39,9 +51,37 @@ export default function InvestorsPage() {
     inv.name.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const tierData = useMemo(() => {
+    return TIERS.map((tier) => ({
+      label: tier.label,
+      count: investors.filter((i) => {
+        const aum = i.totalMfAum || 0;
+        return aum >= tier.min && aum < tier.max;
+      }).length,
+    }));
+  }, [investors]);
+
   return (
     <div className="p-8">
       <PageHeader title="Investors" subtitle={`${investors.length} investors in your book`} />
+
+      {investors.length > 0 && (
+        <Card className="mb-6 p-5">
+          <p className="mb-3 text-[13px] font-medium text-ink">Investors by AUM tier</p>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={tierData}>
+              <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                {tierData.map((_, i) => (
+                  <Cell key={i} fill={i === tierData.length - 1 ? NAVY : GOLD} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
 
       <div className="relative mb-5 max-w-sm">
         <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />

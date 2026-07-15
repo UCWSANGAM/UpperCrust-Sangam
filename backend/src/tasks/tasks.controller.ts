@@ -40,4 +40,16 @@ export class TasksController {
   update(@Param('id') id: string, @Body() dto: UpdateTaskDto, @CurrentUser() user: { id: string; role: string }) {
     return this.tasks.update(id, dto, user);
   }
+
+  @Roles(...ALL_ROLES)
+  @Get(':id/comments')
+  listComments(@Param('id') id: string, @CurrentUser() user: { id: string; role: string }) {
+    return this.tasks.listComments(id, user);
+  }
+
+  @Roles(...ALL_ROLES)
+  @Post(':id/comments')
+  addComment(@Param('id') id: string, @Body('content') content: string, @CurrentUser() user: { id: string; role: string }) {
+    return this.tasks.addComment(id, content, user);
+  }
 }

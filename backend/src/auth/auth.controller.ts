@@ -25,7 +25,7 @@ export class AuthController {
     await this.prisma.auditLog.create({
       data: { userId: user.id, action: 'LOGIN', entity: 'User', entityId: user.id, ipAddress: req.ip },
     });
-    return tokens;
+    return { ...tokens, user: { name: user.name, role: user.role } };
   }
 
   @Post('refresh')

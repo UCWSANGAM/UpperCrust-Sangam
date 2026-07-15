@@ -96,6 +96,7 @@ export class ImportService {
             taxStatus: row['Tax Status'] ? String(row['Tax Status']) : undefined,
             gender: row['Gender'] ? String(row['Gender']) : undefined,
             dateOfBirth: parseDate(row['Date of Birth']),
+            anniversaryDate: parseDate(row['Anniversary Date']),
 
             totalMfAum: toDecimal(row['Total MF AUM (₹)']),
             equityAum: toDecimal(row['Equity AUM (₹)']),

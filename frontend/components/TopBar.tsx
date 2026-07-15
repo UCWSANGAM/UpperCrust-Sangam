@@ -11,7 +11,6 @@ const TITLES: Record<string, string> = {
   '/tasks': 'Tasks & Meetings',
   '/tickets': 'Tickets',
   '/calendar': 'Calendar',
-  '/chat': 'Team Chat',
   '/import': 'Data Import',
   '/users': 'Users',
 };

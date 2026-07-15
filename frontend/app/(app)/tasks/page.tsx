@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Card, PageHeader, Badge, Avatar } from '@/components/ui';
-import { MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Card, PageHeader, Badge, Avatar, ChartCard } from '@/components/ui';
+import { MessageCircle, ChevronDown, ChevronUp, PieChart as PieIcon } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 type Task = {
   id: string;
@@ -191,6 +192,41 @@ export default function TasksPage() {
           </button>
         </form>
       </Card>
+
+      {tasks.length > 0 && (
+        <div className="mb-6 max-w-sm">
+          <ChartCard title="Status breakdown" icon={PieIcon}>
+            {(() => {
+              const statusData = [
+                { name: 'Open', value: tasks.filter((t) => t.status === 'OPEN').length, color: '#B8935A' },
+                { name: 'In progress', value: tasks.filter((t) => t.status === 'IN_PROGRESS').length, color: '#378ADD' },
+                { name: 'Done', value: tasks.filter((t) => t.status === 'DONE').length, color: '#639922' },
+              ].filter((s) => s.value > 0);
+              return (
+                <ResponsiveContainer width="100%" height={160}>
+                  <PieChart>
+                    <Pie
+                      data={statusData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={40}
+                      outerRadius={62}
+                      paddingAngle={2}
+                      label={({ name, value }) => `${name} ${value}`}
+                      labelLine={false}
+                    >
+                      {statusData.map((s, i) => (
+                        <Cell key={i} fill={s.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              );
+            })()}
+          </ChartCard>
+        </div>
+      )}
 
       <div className="space-y-2">
         {loading && <p className="text-sm text-muted">Loading...</p>}

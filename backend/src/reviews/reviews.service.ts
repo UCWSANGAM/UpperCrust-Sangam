@@ -139,6 +139,13 @@ export class ReviewsService {
       .filter((i) => i.quartersOverdue >= 1)
       .sort((a, b) => b.quartersOverdue - a.quartersOverdue || b.aum - a.aum);
 
-    return aged.slice(0, 30);
+    const histogram = [
+      { label: '1 quarter', count: aged.filter((a) => a.quartersOverdue === 1).length },
+      { label: '2 quarters', count: aged.filter((a) => a.quartersOverdue === 2).length },
+      { label: '3+ quarters', count: aged.filter((a) => a.quartersOverdue >= 3 && a.quartersOverdue < 99).length },
+      { label: 'Never reviewed', count: aged.filter((a) => a.quartersOverdue >= 99).length },
+    ];
+
+    return { list: aged.slice(0, 30), histogram };
   }
 }

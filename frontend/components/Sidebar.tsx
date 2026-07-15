@@ -13,7 +13,6 @@ import {
   UserCog,
   LogOut,
   Sparkles,
-  MessageCircle,
   Ticket as TicketIcon,
 } from 'lucide-react';
 
@@ -26,7 +25,6 @@ const NAV = [
   { href: '/tasks', label: 'Tasks & Meetings', icon: CalendarClock },
   { href: '/tickets', label: 'Tickets', icon: TicketIcon },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { href: '/chat', label: 'Team Chat', icon: MessageCircle },
   { href: '/import', label: 'Data Import', icon: Upload, adminOnly: true },
   { href: '/users', label: 'Users', icon: UserCog },
 ];

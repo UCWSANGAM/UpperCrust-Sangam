@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Wallet, TrendingUp, TrendingDown, Percent, Folder, Users, Cake, PieChart as PieIcon, Upload } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { Wallet, TrendingUp, TrendingDown, Folder, Users, Cake, PieChart as PieIcon, Upload } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, PageHeader, StatCard, Avatar, Badge, ChartCard, EmptyState, Skeleton } from '@/components/ui';
 
@@ -17,6 +17,8 @@ type Stats = {
   avgXirr: number;
   topInvestors: { name: string; aum: number; xirr: number | null; familyGroup: string | null }[];
   familyGroups: { name: string; aum: number }[];
+  xirrDistribution: { label: string; count: number }[];
+  genderSplit: { name: string; count: number }[];
 };
 
 type Occasion = {
@@ -71,25 +73,51 @@ export default function DashboardPage() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {!stats && !error && (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-border bg-surface p-5">
-              <Skeleton className="h-3 w-16" />
-              <Skeleton className="mt-3 h-6 w-24" />
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="mb-5 rounded-xl border border-border p-7">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="mt-3 h-9 w-48" />
+          </div>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-surface p-5">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="mt-3 h-6 w-24" />
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {stats && (
         <>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-            <StatCard label="Total AUM" value={formatCr(stats.totalAum)} sub={`${stats.totalInvestors} investors`} icon={Wallet} />
+          <div className="mb-5 flex items-center justify-between rounded-xl border border-border p-7">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Total AUM</p>
+              <p className="mt-1.5 font-display text-[38px] leading-none text-ink">{formatCr(stats.totalAum)}</p>
+              <p className="mt-2 text-[12px] font-medium text-emerald-700">
+                {stats.totalAum > 0 ? `${((stats.equityAum / stats.totalAum) * 100).toFixed(0)}% equity` : '—'} · {stats.totalInvestors} investors
+              </p>
+            </div>
+            <div className="flex gap-8">
+              <div className="text-right">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted">Avg XIRR</p>
+                <p className="mt-1 text-[20px] font-semibold text-ink">{stats.avgXirr.toFixed(2)}%</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted">Avg AUM / Investor</p>
+                <p className="mt-1 text-[20px] font-semibold text-ink">
+                  {stats.totalInvestors > 0 ? formatCr(stats.totalAum / stats.totalInvestors) : '—'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <StatCard label="Equity AUM" value={formatCr(stats.equityAum)} icon={TrendingUp} />
             <StatCard label="Debt AUM" value={formatCr(stats.debtAum)} icon={TrendingDown} />
-            <StatCard label="Avg XIRR" value={`${stats.avgXirr.toFixed(2)}%`} icon={Percent} />
-            <StatCard label="Total Folios" value={String(stats.totalFolios)} icon={Folder} />
             <StatCard label="Total Investors" value={String(stats.totalInvestors)} icon={Users} />
+            <StatCard label="Total Folios" value={String(stats.totalFolios)} icon={Folder} />
           </div>
 
           {stats.totalInvestors === 0 ? (
@@ -119,7 +147,9 @@ export default function DashboardPage() {
                             innerRadius={58}
                             outerRadius={84}
                             paddingAngle={2}
-                            label={({ name, value }) => `${name} ${((value / total) * 100).toFixed(0)}%`}
+                            label={({ name, value }) =>
+                              value / total >= 0.05 ? `${name} ${((value / total) * 100).toFixed(0)}%` : ''
+                            }
                             labelLine={false}
                           >
                             {segments.map((_, i) => (
@@ -168,17 +198,21 @@ export default function DashboardPage() {
 
               <ChartCard title="AUM by family group" icon={Folder}>
                 <div className="space-y-2.5">
-                  {stats.familyGroups.slice(0, 8).map((g) => {
+                  {stats.familyGroups.slice(0, 8).map((g, i) => {
                     const max = stats.familyGroups[0]?.aum || 1;
                     const pct = Math.max(4, (g.aum / max) * 100);
                     const short = g.name.length > 22 ? g.name.slice(0, 22) + '…' : g.name;
+                    const barColor = i === 0 ? '#14171B' : i < 3 ? '#8A6A3E' : '#B8935A';
                     return (
-                      <div key={g.name} className="flex items-center gap-3" title={g.name}>
+                      <div key={g.name} className="group flex items-center gap-3" title={g.name}>
                         <span className="w-36 shrink-0 truncate text-[12px] text-ink">{short}</span>
                         <div className="h-4 flex-1 overflow-hidden rounded bg-background">
-                          <div className="h-full rounded bg-[#14171B] transition-all" style={{ width: `${pct}%` }} />
+                          <div
+                            className="h-full rounded transition-all group-hover:opacity-80"
+                            style={{ width: `${pct}%`, backgroundColor: barColor }}
+                          />
                         </div>
-                        <span className="w-16 shrink-0 text-right text-[11px] text-muted">{formatCr(g.aum)}</span>
+                        <span className="w-16 shrink-0 text-right text-[11px] font-medium text-ink">{formatCr(g.aum)}</span>
                       </div>
                     );
                   })}
@@ -207,6 +241,41 @@ export default function DashboardPage() {
                   })}
                 </div>
               </ChartCard>
+
+              <ChartCard title="XIRR distribution" icon={TrendingUp}>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={stats.xirrDistribution}>
+                    <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                    <Bar dataKey="count" fill={GOLD} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              {stats.genderSplit.length > 0 && (
+                <ChartCard title="Investors by gender" icon={Users}>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie
+                        data={stats.genderSplit.map((g) => ({ name: g.name, value: g.count }))}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={48}
+                        outerRadius={72}
+                        paddingAngle={2}
+                        label={({ name, value }) => `${name} ${value}`}
+                        labelLine={false}
+                      >
+                        {stats.genderSplit.map((_, i) => (
+                          <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartCard>
+              )}
             </div>
           )}
 

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { Card, PageHeader, Badge, Avatar, StatCard, ChartCard, EmptyState } from '@/components/ui';
 import { TrendingUp, Users, Wallet, Repeat } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 
 type RmSales = {
   rmId: string;
@@ -114,6 +114,32 @@ export default function SalesPage() {
                 })}
             </div>
           </ChartCard>
+
+          <ChartCard title="Gross sales vs redemptions by RM (FY)" icon={TrendingUp}>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={rows.map((r) => ({ name: r.rmName.split(' ')[0], Sales: Number((r.grossSalesFY / 10000000).toFixed(2)), Redemptions: Number((r.redemptionsFY / 10000000).toFixed(2)) }))}>
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-30} textAnchor="end" height={50} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip formatter={(v: number) => `₹${v} Cr`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="Sales" fill={GOLD} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Redemptions" fill="#E24B4A" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          {rows.some((r) => r.nfoGrossSalesFY > 0) && (
+            <ChartCard title="NFO participation by RM (FY)" icon={Repeat}>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={rows.filter((r) => r.nfoGrossSalesFY > 0).map((r) => ({ name: r.rmName.split(' ')[0], cr: Number((r.nfoGrossSalesFY / 10000000).toFixed(2)) }))}>
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-30} textAnchor="end" height={50} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip formatter={(v: number) => `₹${v} Cr`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                  <Bar dataKey="cr" fill={NAVY} radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          )}
         </div>
       )}
 

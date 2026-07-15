@@ -1,23 +1,24 @@
 import type { Config } from 'tailwindcss';
 
-// Saarthi house style — dark sidebar, ivory content, gold accent, Playfair Display numerals
+// Corporate white/gold house style — white canvas, dark navy sidebar, gold accent,
+// Manrope for UI text, Playfair Display reserved for hero numerals only.
 const config: Config = {
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        background: '#FAF7F0', // ivory content area
+        background: '#FFFFFF', // white content area
         surface: '#FFFFFF', // card surface
         sidebar: '#14171B', // dark navy/black sidebar
-        border: '#E7E1D3',
+        border: '#E5E5E5',
         accent: '#B8935A', // gold
         accentDark: '#8A6A3E',
-        ink: '#1F2430', // primary text on ivory
-        muted: '#8A8F98',
+        ink: '#141414', // primary text on white
+        muted: '#71767C',
       },
       fontFamily: {
         display: ['"Playfair Display"', 'serif'],
-        sans: ['Poppins', 'sans-serif'],
+        sans: ['Manrope', 'sans-serif'],
       },
     },
   },

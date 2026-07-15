@@ -43,6 +43,7 @@ model User {
   taskComments     TaskComment[]
   assignedTickets  Ticket[] @relation("AssignedTickets")
   createdTickets   Ticket[] @relation("CreatedTickets")
+  ticketComments   TicketComment[]
 }
 
 // Persistent revocation store — supports instant logout / force logout
@@ -333,9 +334,17 @@ enum TicketStatus {
 // A raised work item, tagged to a colleague — distinct from Team Chat (broadcast)
 // and Task (personal to-do). Admins see every ticket; everyone else sees only
 // tickets they raised or were assigned.
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 model Ticket {
   id           String         @id @default(uuid())
   workType     TicketWorkType
+  priority     TicketPriority @default(MEDIUM)
   title        String
   description  String?
   status       TicketStatus   @default(OPEN)
@@ -346,10 +355,25 @@ model Ticket {
   createdBy    User           @relation("CreatedTickets", fields: [createdById], references: [id])
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+  comments     TicketComment[]
 
   @@index([assignedToId])
   @@index([createdById])
   @@index([status])
+}
+
+// Discussion thread on a ticket — turns it into a real helpdesk conversation,
+// not just a status tracker.
+model TicketComment {
+  id        String   @id @default(uuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
 }
 
 // One row per calendar day — captured after each import. Starts accumulating now

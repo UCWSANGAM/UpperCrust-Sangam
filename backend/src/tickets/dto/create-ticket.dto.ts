@@ -1,9 +1,13 @@
 import { IsDateString, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
-import { TicketWorkType } from '@prisma/client';
+import { TicketWorkType, TicketPriority } from '@prisma/client';
 
 export class CreateTicketDto {
   @IsEnum(TicketWorkType)
   workType: TicketWorkType;
+
+  @IsOptional()
+  @IsEnum(TicketPriority)
+  priority?: TicketPriority;
 
   @IsString()
   @MinLength(1)

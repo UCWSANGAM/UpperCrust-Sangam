@@ -42,19 +42,23 @@ export default function CrossSellPage() {
       <PageHeader title="Cross-sell opportunities" subtitle="Investors not currently holding each product, ranked by AUM" />
 
       {conversions && (
-        <div className="mb-6 grid grid-cols-2 gap-4 max-w-md">
+        <div className="mb-6 grid gap-4 lg:grid-cols-3">
           <StatCard label="Conversions this month" value={String(conversions.total)} icon={CheckCircle2} />
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="mb-2 text-[11px] font-medium uppercase text-muted">By product</p>
-            <div className="space-y-1">
-              {conversions.byProduct.slice(0, 3).map((p) => (
-                <div key={p.name} className="flex justify-between text-[12px]">
-                  <span className="truncate text-ink">{p.name}</span>
-                  <span className="text-muted">{p.count}</span>
-                </div>
-              ))}
-              {conversions.byProduct.length === 0 && <p className="text-[12px] text-muted">None yet this month</p>}
-            </div>
+          <div className="lg:col-span-2">
+            <ChartCard title="Conversions by product">
+              {conversions.byProduct.length === 0 ? (
+                <p className="text-[12px] text-muted">None yet this month.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={Math.max(100, conversions.byProduct.length * 30)}>
+                  <BarChart data={conversions.byProduct} layout="vertical" margin={{ left: 8 }}>
+                    <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={160} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                    <Bar dataKey="count" fill="#639922" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
           </div>
         </div>
       )}

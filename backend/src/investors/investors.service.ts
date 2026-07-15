@@ -24,7 +24,7 @@ export class InvestorsService {
     const isPrivileged = ['SUPER_ADMIN', 'ADMIN', 'BRANCH_MANAGER'].includes(user.role);
     const where = isPrivileged ? {} : { ownerId: user.id };
 
-    const [count, aggregate, folioCount, topInvestors, familyGroups] = await Promise.all([
+    const [count, aggregate, folioCount, topInvestors, familyGroups, genderGroups] = await Promise.all([
       this.prisma.investor.count({ where }),
       this.prisma.investor.aggregate({
         where,
@@ -45,7 +45,34 @@ export class InvestorsService {
         orderBy: { _sum: { totalMfAum: 'desc' } },
         take: 8,
       }),
+      this.prisma.investor.groupBy({
+        by: ['gender'],
+        where: { ...where, gender: { not: null } },
+        _count: { _all: true },
+      }),
     ]);
+
+    // XIRR distribution — separate counts per band, cheap since each is an indexed count query
+    const xirrBands = [
+      { label: '< 0%', min: -Infinity, max: 0 },
+      { label: '0-8%', min: 0, max: 8 },
+      { label: '8-12%', min: 8, max: 12 },
+      { label: '12-18%', min: 12, max: 18 },
+      { label: '18%+', min: 18, max: Infinity },
+    ];
+    const xirrCounts = await Promise.all(
+      xirrBands.map((band) =>
+        this.prisma.investor.count({
+          where: {
+            ...where,
+            xirrTotal: {
+              gte: band.min === -Infinity ? undefined : band.min,
+              lt: band.max === Infinity ? undefined : band.max,
+            },
+          },
+        }),
+      ),
+    );
 
     return {
       totalInvestors: count,
@@ -67,6 +94,8 @@ export class InvestorsService {
         name: g.familyGroup || 'Unassigned',
         aum: Number(g._sum.totalMfAum) || 0,
       })),
+      xirrDistribution: xirrBands.map((band, i) => ({ label: band.label, count: xirrCounts[i] })),
+      genderSplit: genderGroups.map((g) => ({ name: g.gender || 'Unknown', count: g._count._all })),
     };
   }
 
@@ -332,5 +361,22 @@ export class InvestorsService {
     }
 
     return results.sort((a, b) => a.daysUntil - b.daysUntil).slice(0, 30);
+  }
+
+  // Book composition by tax status (Individual, HUF, NRI, etc.) — used on the Investors page
+  async taxStatusBreakdown(user: { id: string; role: string }) {
+    const isPrivileged = ['SUPER_ADMIN', 'ADMIN', 'BRANCH_MANAGER'].includes(user.role);
+    const where = isPrivileged ? {} : { ownerId: user.id };
+
+    const groups = await this.prisma.investor.groupBy({
+      by: ['taxStatus'],
+      where: { ...where, taxStatus: { not: null } },
+      _count: { _all: true },
+      _sum: { totalMfAum: true },
+    });
+
+    return groups
+      .map((g) => ({ name: g.taxStatus || 'Unknown', count: g._count._all, aum: Number(g._sum.totalMfAum) || 0 }))
+      .sort((a, b) => b.count - a.count);
   }
 }

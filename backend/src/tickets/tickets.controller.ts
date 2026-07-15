@@ -40,4 +40,16 @@ export class TicketsController {
   update(@Param('id') id: string, @Body() dto: UpdateTicketDto, @CurrentUser() user: { id: string; role: string }) {
     return this.tickets.update(id, dto, user);
   }
+
+  @Roles(...ALL_ROLES)
+  @Get(':id/comments')
+  listComments(@Param('id') id: string, @CurrentUser() user: { id: string; role: string }) {
+    return this.tickets.listComments(id, user);
+  }
+
+  @Roles(...ALL_ROLES)
+  @Post(':id/comments')
+  addComment(@Param('id') id: string, @Body('content') content: string, @CurrentUser() user: { id: string; role: string }) {
+    return this.tickets.addComment(id, content, user);
+  }
 }

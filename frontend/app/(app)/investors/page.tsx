@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, BarChart3 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Search, BarChart3, PieChart as PieIcon } from 'lucide-react';
+import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { api } from '@/lib/api';
 import { Card, PageHeader, Badge, Avatar, ChartCard, EmptyState } from '@/components/ui';
 
@@ -39,12 +39,14 @@ export default function InvestorsPage() {
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [taxStatus, setTaxStatus] = useState<{ name: string; count: number; aum: number }[]>([]);
 
   useEffect(() => {
     api
       .get('/investors')
       .then(({ data }) => setInvestors(data))
       .finally(() => setLoading(false));
+    api.get('/investors/tax-status').then(({ data }) => setTaxStatus(data)).catch(() => {});
   }, []);
 
   const filtered = investors.filter((inv) =>
@@ -66,7 +68,7 @@ export default function InvestorsPage() {
       <PageHeader title="Investors" subtitle={`${investors.length} investors in your book`} />
 
       {investors.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-6 grid gap-4 lg:grid-cols-2">
           <ChartCard title="Investors by AUM tier" icon={BarChart3}>
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={tierData}>
@@ -81,6 +83,30 @@ export default function InvestorsPage() {
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
+
+          {taxStatus.length > 0 && (
+            <ChartCard title="Investors by tax status" icon={PieIcon}>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie
+                    data={taxStatus.map((t) => ({ name: t.name, value: t.count }))}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={40}
+                    outerRadius={62}
+                    paddingAngle={2}
+                    label={({ name, value }) => `${name} ${value}`}
+                    labelLine={false}
+                  >
+                    {taxStatus.map((_, i) => (
+                      <Cell key={i} fill={i === 0 ? GOLD : i === 1 ? NAVY : '#7C9A92'} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          )}
         </div>
       )}
 

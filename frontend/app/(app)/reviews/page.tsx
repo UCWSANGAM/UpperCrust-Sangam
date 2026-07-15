@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Card, PageHeader, Badge, Avatar, SectionTitle, EmptyState } from '@/components/ui';
 import { CheckCircle2 } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { ChartCard } from '@/components/ui';
 
 const GOLD = '#B8935A';
 const NAVY = '#14171B';
@@ -47,11 +48,15 @@ export default function ReviewsPage() {
   const [due, setDue] = useState<Due | null>(null);
   const [compliance, setCompliance] = useState<ComplianceRow[]>([]);
   const [aging, setAging] = useState<AgingRow[]>([]);
+  const [agingHistogram, setAgingHistogram] = useState<{ label: string; count: number }[]>([]);
 
   useEffect(() => {
     api.get('/reviews/due').then(({ data }) => setDue(data));
     api.get('/reviews/compliance').then(({ data }) => setCompliance(data));
-    api.get('/reviews/aging').then(({ data }) => setAging(data));
+    api.get('/reviews/aging').then(({ data }) => {
+      setAging(data.list);
+      setAgingHistogram(data.histogram);
+    });
   }, []);
 
   if (!due) return <div className="p-8 text-sm text-muted">Loading...</div>;
@@ -133,7 +138,23 @@ export default function ReviewsPage() {
       {aging.length > 0 && (
         <>
           <SectionTitle>Most overdue (aging)</SectionTitle>
-          <Card className="mb-8 overflow-hidden">
+          {agingHistogram.length > 0 && (
+            <ChartCard title="Aging distribution">
+              <ResponsiveContainer width="100%" height={140}>
+                <BarChart data={agingHistogram}>
+                  <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    {agingHistogram.map((_, i) => (
+                      <Cell key={i} fill={i >= 2 ? '#E24B4A' : GOLD} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          )}
+          <Card className="mb-8 mt-4 overflow-hidden">
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="border-b border-border bg-background/60 text-left text-[11px] font-medium uppercase tracking-wide text-muted">

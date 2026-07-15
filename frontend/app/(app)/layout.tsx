@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import TopBar from '@/components/TopBar';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -21,7 +22,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex">
       <Sidebar />
-      <main className="min-h-screen flex-1 bg-background">{children}</main>
+      <div className="flex flex-1 flex-col">
+        <TopBar />
+        <main className="min-h-screen flex-1 bg-background">{children}</main>
+      </div>
     </div>
   );
 }

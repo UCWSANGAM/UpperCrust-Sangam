@@ -14,7 +14,7 @@ export default function ImportPage() {
     const form = new FormData();
     form.append('file', file);
     try {
-      const { data } = await api.post('/import/investor-list', form);
+      const { data } = await api.post('/import/investor-list', form, { timeout: 300000 });
       const unmatched = data.unmatchedRMs?.length
         ? ` — RM names not found: ${data.unmatchedRMs.join(', ')} (add them under Users first, matching the name exactly)`
         : '';
@@ -42,7 +42,7 @@ export default function ImportPage() {
           onChange={handleFile}
           className="text-sm text-muted"
         />
-        {busy && <p className="mt-2 text-sm text-muted">Uploading...</p>}
+        {busy && <p className="mt-2 text-sm text-muted">Uploading and processing — large files (5,000+ rows) can take 1-2 minutes, please don't close this tab...</p>}
         {status && <p className="mt-3 text-xs text-ink break-all">{status}</p>}
       </div>
     </div>

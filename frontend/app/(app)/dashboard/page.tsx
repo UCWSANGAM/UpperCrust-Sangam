@@ -1,7 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Wallet, TrendingUp, TrendingDown, Percent, Folder, Users } from 'lucide-react';
 import { api } from '@/lib/api';
+import { Card, PageHeader, StatCard } from '@/components/ui';
 
 type Stats = {
   totalInvestors: number;
@@ -25,22 +27,12 @@ function formatCr(value: number) {
   return `₹${toCr(value)} Cr`;
 }
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface p-5">
-      <p className="text-xs uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-2 font-display text-2xl text-ink">{value}</p>
-      {sub && <p className="mt-1 text-xs text-muted">{sub}</p>}
-    </div>
-  );
-}
-
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-border bg-surface p-5">
-      <p className="mb-4 font-display text-lg text-ink">{title}</p>
+    <Card className="p-5">
+      <p className="mb-4 text-[13px] font-medium text-ink">{title}</p>
       {children}
-    </div>
+    </Card>
   );
 }
 
@@ -57,26 +49,25 @@ export default function DashboardPage() {
 
   return (
     <div className="p-8">
-      <h1 className="font-display text-3xl text-ink">Mission Control</h1>
-      <p className="mt-1 text-sm text-muted">Investor book, portfolio intelligence at a glance</p>
+      <PageHeader title="Mission Control" subtitle="Investor book, portfolio intelligence at a glance" />
 
-      {error && <p className="mt-6 text-sm text-red-600">{error}</p>}
-      {!stats && !error && <p className="mt-6 text-sm text-muted">Loading...</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      {!stats && !error && <p className="text-sm text-muted">Loading...</p>}
 
       {stats && (
         <>
-          <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            <StatCard label="Total AUM" value={formatCr(stats.totalAum)} sub={`${stats.totalInvestors} investors`} />
-            <StatCard label="Equity AUM" value={formatCr(stats.equityAum)} />
-            <StatCard label="Debt AUM" value={formatCr(stats.debtAum)} />
-            <StatCard label="Avg XIRR" value={`${stats.avgXirr.toFixed(2)}%`} />
-            <StatCard label="Total Folios" value={String(stats.totalFolios)} />
-            <StatCard label="Total Investors" value={String(stats.totalInvestors)} />
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+            <StatCard label="Total AUM" value={formatCr(stats.totalAum)} sub={`${stats.totalInvestors} investors`} icon={Wallet} />
+            <StatCard label="Equity AUM" value={formatCr(stats.equityAum)} icon={TrendingUp} />
+            <StatCard label="Debt AUM" value={formatCr(stats.debtAum)} icon={TrendingDown} />
+            <StatCard label="Avg XIRR" value={`${stats.avgXirr.toFixed(2)}%`} icon={Percent} />
+            <StatCard label="Total Folios" value={String(stats.totalFolios)} icon={Folder} />
+            <StatCard label="Total Investors" value={String(stats.totalInvestors)} icon={Users} />
           </div>
 
           {stats.totalInvestors === 0 ? (
             <p className="mt-8 text-sm text-muted">
-              No investor data yet — go to Data Import to upload your Investor List and Folio Report.
+              No investor data yet — go to Data Import to upload your investor data file.
             </p>
           ) : (
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
@@ -97,7 +88,7 @@ export default function DashboardPage() {
                       <Cell fill={GOLD} />
                       <Cell fill={NAVY} />
                     </Pie>
-                    <Tooltip formatter={(v: number) => `₹${v} Cr`} />
+                    <Tooltip formatter={(v: number) => `₹${v} Cr`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </ChartCard>
@@ -107,7 +98,7 @@ export default function DashboardPage() {
                   <BarChart data={stats.topInvestors.map((i) => ({ name: i.name, cr: toCr(i.aum) }))}>
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={50} />
                     <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip formatter={(v: number) => `₹${v} Cr`} />
+                    <Tooltip formatter={(v: number) => `₹${v} Cr`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                     <Bar dataKey="cr" fill={GOLD} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -118,7 +109,7 @@ export default function DashboardPage() {
                   <BarChart data={stats.familyGroups.map((g) => ({ name: g.name, cr: toCr(g.aum) }))} layout="vertical">
                     <XAxis type="number" tick={{ fontSize: 10 }} />
                     <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={110} />
-                    <Tooltip formatter={(v: number) => `₹${v} Cr`} />
+                    <Tooltip formatter={(v: number) => `₹${v} Cr`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                     <Bar dataKey="cr" fill={NAVY} radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>

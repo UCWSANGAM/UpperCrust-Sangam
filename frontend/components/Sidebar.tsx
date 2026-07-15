@@ -1,15 +1,25 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import {
+  LayoutDashboard,
+  Users,
+  TrendingUp,
+  ClipboardCheck,
+  CalendarClock,
+  Upload,
+  UserCog,
+  LogOut,
+} from 'lucide-react';
 
 const NAV = [
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/investors', label: 'Investors' },
-  { href: '/sales', label: 'Sales' },
-  { href: '/reviews', label: 'Quarterly Reviews' },
-  { href: '/tasks', label: 'Tasks & Meetings' },
-  { href: '/import', label: 'Data Import' },
-  { href: '/users', label: 'Users' },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/investors', label: 'Investors', icon: Users },
+  { href: '/sales', label: 'Sales', icon: TrendingUp },
+  { href: '/reviews', label: 'Quarterly Reviews', icon: ClipboardCheck },
+  { href: '/tasks', label: 'Tasks & Meetings', icon: CalendarClock },
+  { href: '/import', label: 'Data Import', icon: Upload },
+  { href: '/users', label: 'Users', icon: UserCog },
 ];
 
 export default function Sidebar() {
@@ -22,28 +32,32 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="flex h-screen w-56 flex-col justify-between bg-sidebar px-4 py-6">
+    <aside className="flex h-screen w-60 flex-col justify-between bg-sidebar px-3 py-5">
       <div>
-        <div className="mb-8 flex items-center gap-2 px-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-accent font-display text-sm font-bold text-sidebar">
+        <div className="mb-8 flex items-center gap-2.5 px-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent font-display text-sm font-bold text-sidebar">
             S
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted">UpperCrust Wealth</p>
-            <p className="font-display text-lg text-white">SANGAM</p>
+            <p className="text-[9px] font-medium uppercase tracking-wider text-gray-500">UpperCrust Wealth</p>
+            <p className="font-display text-[17px] leading-none text-white">Sangam</p>
           </div>
         </div>
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-0.5">
           {NAV.map((item) => {
             const active = pathname === item.href;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded px-3 py-2 text-sm transition-colors ${
-                  active ? 'bg-accent/20 text-accent' : 'text-gray-300 hover:bg-white/5'
+                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] transition-colors ${
+                  active
+                    ? 'bg-accent/15 font-medium text-accent'
+                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
                 }`}
               >
+                <Icon size={16} strokeWidth={2} />
                 {item.label}
               </Link>
             );
@@ -52,8 +66,9 @@ export default function Sidebar() {
       </div>
       <button
         onClick={signOut}
-        className="rounded px-3 py-2 text-left text-sm text-gray-400 hover:bg-white/5 hover:text-white"
+        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] text-gray-500 hover:bg-white/5 hover:text-white"
       >
+        <LogOut size={16} strokeWidth={2} />
         Sign out
       </button>
     </aside>

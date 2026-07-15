@@ -12,6 +12,7 @@ export class ImportService {
   // Single-source daily export: one row per investor, covers profile, AUM, sales,
   // and needs-gap data all at once. RM ownership comes from "Partner/Employee",
   // matched against real User accounts — never from whoever uploaded the file.
+  // Processes in parallel batches (not one row at a time) — files can be 5,000+ rows.
   async importInvestorList(buffer: Buffer, fallbackOwnerId: string) {
     const wb = XLSX.read(buffer, { type: 'buffer' });
     const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -22,82 +23,97 @@ export class ImportService {
       select: { id: true, name: true },
     });
 
-    const unmatchedNames = new Set<string>();
+    const uccList = rows.map((r) => (r['UCC'] ? String(r['UCC']) : null)).filter(Boolean) as string[];
+    const existingInvestors = await this.prisma.investor.findMany({
+      where: { ucc: { in: uccList } },
+      select: { id: true, ucc: true },
+    });
+    const existingByUcc = new Map(existingInvestors.map((i) => [i.ucc, i.id]));
 
-    function resolveOwner(partnerField: string | null): string | undefined {
+    const unmatchedNames = new Set<string>();
+    const resolveOwner = (partnerField: string | null): string | undefined => {
       if (!partnerField) return undefined;
       const haystack = partnerField.toLowerCase();
       const match = activeUsers.find((u) => haystack.includes(u.name.toLowerCase()));
       if (match) return match.id;
       unmatchedNames.add(partnerField.trim());
       return undefined;
-    }
+    };
 
+    const now = new Date();
     let created = 0;
     let updated = 0;
-    const now = new Date();
 
-    for (const row of rows) {
-      const name = row['Investor'];
-      if (!name) continue;
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+      const batch = rows.slice(i, i + BATCH_SIZE);
 
-      const ucc = row['UCC'] ? String(row['UCC']) : undefined;
-      const pan = row['PAN'] ? String(row['PAN']) : undefined;
-      const mobile = row['Investor Mobile No.'] ? String(row['Investor Mobile No.']) : undefined;
-      const matchedOwnerId = resolveOwner(row['Partner/Employee'] ? String(row['Partner/Employee']) : null);
+      await Promise.all(
+        batch.map(async (row) => {
+          const name = row['Investor'];
+          if (!name) return;
 
-      const data = {
-        name,
-        email: row['Investor E-Mail Id.'] ? String(row['Investor E-Mail Id.']) : undefined,
-        location: row['Location'] ? String(row['Location']) : undefined,
-        familyGroup: row['Group'] ? String(row['Group']) : undefined,
-        taxStatus: row['Tax Status'] ? String(row['Tax Status']) : undefined,
-        gender: row['Gender'] ? String(row['Gender']) : undefined,
-        dateOfBirth: parseDate(row['Date of Birth']),
+          const ucc = row['UCC'] ? String(row['UCC']) : undefined;
+          const pan = row['PAN'] ? String(row['PAN']) : undefined;
+          const mobile = row['Investor Mobile No.'] ? String(row['Investor Mobile No.']) : undefined;
+          const matchedOwnerId = resolveOwner(row['Partner/Employee'] ? String(row['Partner/Employee']) : null);
 
-        totalMfAum: toDecimal(row['Total MF AUM (₹)']),
-        equityAum: toDecimal(row['Equity AUM (₹)']),
-        debtAum: toDecimal(row['Debt AUM (₹)']),
-        cashAum: toDecimal(row['Cash AUM (₹)']),
-        goldAum: toDecimal(row['Gold  AUM (₹)']),
-        pmsAum: toDecimal(row['PMS AUM (₹)']),
-        totalAumMfPms: toDecimal(row['Total AUM - MF + PMS (₹)']),
+          const data = {
+            name,
+            email: row['Investor E-Mail Id.'] ? String(row['Investor E-Mail Id.']) : undefined,
+            location: row['Location'] ? String(row['Location']) : undefined,
+            familyGroup: row['Group'] ? String(row['Group']) : undefined,
+            taxStatus: row['Tax Status'] ? String(row['Tax Status']) : undefined,
+            gender: row['Gender'] ? String(row['Gender']) : undefined,
+            dateOfBirth: parseDate(row['Date of Birth']),
 
-        xirrEquity: toDecimal(row['Investor XIRR - MF Equity']),
-        xirrDebt: toDecimal(row['Investor XIRR - MF Debt']),
-        xirrTotal: toDecimal(row['Investor XIRR - MF Total']),
+            totalMfAum: toDecimal(row['Total MF AUM (₹)']),
+            equityAum: toDecimal(row['Equity AUM (₹)']),
+            debtAum: toDecimal(row['Debt AUM (₹)']),
+            cashAum: toDecimal(row['Cash AUM (₹)']),
+            goldAum: toDecimal(row['Gold  AUM (₹)']),
+            pmsAum: toDecimal(row['PMS AUM (₹)']),
+            totalAumMfPms: toDecimal(row['Total AUM - MF + PMS (₹)']),
 
-        netSalesFY: toDecimal(row['MF Net Sales (FY) (₹)']),
-        grossSalesFY: toDecimal(row['MF Gross Sales (FY) (₹)']),
-        redemptionsFY: toDecimal(row['MF Redemptions (FY) (₹)']),
-        netSalesCY: toDecimal(row['MF Net Sales (CY) (₹)']),
-        grossSalesCY: toDecimal(row['MF Gross Sales (CY) (₹)']),
-        redemptionsCY: toDecimal(row['MF Redemptions(CY) (₹)']),
-        liveSipAmount: toDecimal(row['Live SIP Amount']),
-        liveSipCount: toInt(row['No. of Live SIPs']),
+            xirrEquity: toDecimal(row['Investor XIRR - MF Equity']),
+            xirrDebt: toDecimal(row['Investor XIRR - MF Debt']),
+            xirrTotal: toDecimal(row['Investor XIRR - MF Total']),
 
-        totalNeedsIdentified: toInt(row['Total needs Identified']),
-        mappedNeedWithGap: toInt(row['No. of Mapped Need with gap']),
-        totalLumpsumGapAmount: toDecimal(row['Total Lumpsum Gap Amount (₹)']),
-        totalSipGapAmount: toDecimal(row['Total SIP Gap Amount (₹)']),
+            netSalesFY: toDecimal(row['MF Net Sales (FY) (₹)']),
+            grossSalesFY: toDecimal(row['MF Gross Sales (FY) (₹)']),
+            redemptionsFY: toDecimal(row['MF Redemptions (FY) (₹)']),
+            netSalesCY: toDecimal(row['MF Net Sales (CY) (₹)']),
+            grossSalesCY: toDecimal(row['MF Gross Sales (CY) (₹)']),
+            redemptionsCY: toDecimal(row['MF Redemptions(CY) (₹)']),
+            liveSipAmount: toDecimal(row['Live SIP Amount']),
+            liveSipCount: toInt(row['No. of Live SIPs']),
 
-        panEncrypted: pan ? this.crypto.encrypt(pan) : undefined,
-        mobileEncrypted: mobile ? this.crypto.encrypt(mobile) : undefined,
-        lastImportedAt: now,
-        ...(matchedOwnerId ? { ownerId: matchedOwnerId } : {}),
-      };
+            totalNeedsIdentified: toInt(row['Total needs Identified']),
+            mappedNeedWithGap: toInt(row['No. of Mapped Need with gap']),
+            totalLumpsumGapAmount: toDecimal(row['Total Lumpsum Gap Amount (₹)']),
+            totalSipGapAmount: toDecimal(row['Total SIP Gap Amount (₹)']),
 
-      const existing = ucc ? await this.prisma.investor.findUnique({ where: { ucc } }) : null;
+            panEncrypted: pan ? this.crypto.encrypt(pan) : undefined,
+            mobileEncrypted: mobile ? this.crypto.encrypt(mobile) : undefined,
+            lastImportedAt: now,
+            ...(matchedOwnerId ? { ownerId: matchedOwnerId } : {}),
+          };
 
-      if (existing) {
-        await this.prisma.investor.update({ where: { id: existing.id }, data });
-        updated++;
-      } else {
-        await this.prisma.investor.create({
-          data: { ...data, ucc, ownerId: matchedOwnerId || fallbackOwnerId },
-        });
-        created++;
-      }
+          const existingId = ucc ? existingByUcc.get(ucc) : undefined;
+
+          if (existingId) {
+            await this.prisma.investor.update({ where: { id: existingId }, data });
+            updated++;
+          } else {
+            await this.prisma.investor.create({
+              data: { ...data, ucc, ownerId: matchedOwnerId || fallbackOwnerId },
+            });
+            created++;
+          }
+        }),
+      );
+
+      this.logger.log(`Import progress: ${Math.min(i + BATCH_SIZE, rows.length)}/${rows.length} rows`);
     }
 
     this.logger.log(`Investor import: ${created} created, ${updated} updated, ${unmatchedNames.size} unmatched RM names`);

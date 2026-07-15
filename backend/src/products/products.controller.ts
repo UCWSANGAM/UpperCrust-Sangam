@@ -35,6 +35,12 @@ export class ProductsController {
   }
 
   @Roles(...ALL_ROLES)
+  @Get('conversions')
+  conversions(@CurrentUser() user: { id: string; role: string }) {
+    return this.products.conversionsThisMonth(user);
+  }
+
+  @Roles(...ALL_ROLES)
   @Get('investor/:investorId')
   matrix(@Param('investorId') investorId: string, @CurrentUser() user: { id: string; role: string }) {
     return this.products.matrixForInvestor(investorId, user);

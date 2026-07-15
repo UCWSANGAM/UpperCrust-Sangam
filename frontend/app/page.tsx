@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search } from 'lucide-react';
+import { Search, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { api } from '@/lib/api';
-import { Card, PageHeader, Badge, Avatar } from '@/components/ui';
+import { Card, PageHeader, Badge, Avatar, ChartCard, EmptyState } from '@/components/ui';
 
 type Investor = {
   id: string;
@@ -66,21 +66,22 @@ export default function InvestorsPage() {
       <PageHeader title="Investors" subtitle={`${investors.length} investors in your book`} />
 
       {investors.length > 0 && (
-        <Card className="mb-6 p-5">
-          <p className="mb-3 text-[13px] font-medium text-ink">Investors by AUM tier</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={tierData}>
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                {tierData.map((_, i) => (
-                  <Cell key={i} fill={i === tierData.length - 1 ? NAVY : GOLD} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+        <div className="mb-6">
+          <ChartCard title="Investors by AUM tier" icon={BarChart3}>
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={tierData}>
+                <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  {tierData.map((_, i) => (
+                    <Cell key={i} fill={i === tierData.length - 1 ? NAVY : GOLD} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </div>
       )}
 
       <div className="relative mb-5 max-w-sm">
@@ -106,13 +107,15 @@ export default function InvestorsPage() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={4} className="px-5 py-8 text-center text-muted">Loading...</td>
+                <td colSpan={4} className="px-5 py-8">
+                  <div className="mx-auto h-4 w-40 animate-pulse rounded bg-border/70" />
+                </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-5 py-8 text-center text-muted">
-                  No investors found. Upload your investor data under Data Import.
+                <td colSpan={4}>
+                  <EmptyState message="No investors found. Upload your investor data under Data Import." />
                 </td>
               </tr>
             )}

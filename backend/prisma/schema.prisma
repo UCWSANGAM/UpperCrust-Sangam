@@ -41,6 +41,8 @@ model User {
   productUpdates   InvestorProduct[]
   messages         Message[]
   taskComments     TaskComment[]
+  assignedTickets  Ticket[] @relation("AssignedTickets")
+  createdTickets   Ticket[] @relation("CreatedTickets")
 }
 
 // Persistent revocation store — supports instant logout / force logout
@@ -164,6 +166,16 @@ model Investor {
   redemptionsCY     Decimal? @db.Decimal(18, 2)
   liveSipAmount     Decimal? @db.Decimal(18, 2)
   liveSipCount      Int?
+
+  // SIP-specific and NFO sales — lets Sales break out SIP vs lumpsum, and NFO participation
+  sipGrossSalesFY   Decimal? @db.Decimal(18, 2)
+  sipNetSalesFY     Decimal? @db.Decimal(18, 2)
+  sipGrossSalesCY   Decimal? @db.Decimal(18, 2)
+  sipNetSalesCY     Decimal? @db.Decimal(18, 2)
+  nfoGrossSalesFY   Decimal? @db.Decimal(18, 2)
+  nfoGrossSalesCY   Decimal? @db.Decimal(18, 2)
+  nfoSipSalesFY     Decimal? @db.Decimal(18, 2)
+  nfoSipSalesCY     Decimal? @db.Decimal(18, 2)
 
   // Needs & gap analysis — drives cross-sell opportunity detection
   totalNeedsIdentified   Int?
@@ -301,4 +313,56 @@ model QuarterlyReview {
 
   @@unique([investorId, year, quarter])
   @@index([reviewerId])
+}
+
+enum TicketWorkType {
+  CLIENT_ONBOARDING
+  KYC_COMPLIANCE
+  PORTFOLIO_REVIEW
+  REDEMPTION_WITHDRAWAL
+  DOCUMENTATION
+  OTHER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+// A raised work item, tagged to a colleague — distinct from Team Chat (broadcast)
+// and Task (personal to-do). Admins see every ticket; everyone else sees only
+// tickets they raised or were assigned.
+model Ticket {
+  id           String         @id @default(uuid())
+  workType     TicketWorkType
+  title        String
+  description  String?
+  status       TicketStatus   @default(OPEN)
+  dueAt        DateTime?
+  assignedToId String
+  assignedTo   User           @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  createdById  String
+  createdBy    User           @relation("CreatedTickets", fields: [createdById], references: [id])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([assignedToId])
+  @@index([createdById])
+  @@index([status])
+}
+
+// One row per calendar day — captured after each import. Starts accumulating now
+// so trend charts (AUM growth over time) have real data to draw from in a few weeks.
+model DailySnapshot {
+  id             String   @id @default(uuid())
+  date           DateTime @unique @db.Date
+  totalAum       Decimal? @db.Decimal(18, 2)
+  equityAum      Decimal? @db.Decimal(18, 2)
+  debtAum        Decimal? @db.Decimal(18, 2)
+  cashAum        Decimal? @db.Decimal(18, 2)
+  goldAum        Decimal? @db.Decimal(18, 2)
+  pmsAum         Decimal? @db.Decimal(18, 2)
+  investorCount  Int      @default(0)
+  createdAt      DateTime @default(now())
 }

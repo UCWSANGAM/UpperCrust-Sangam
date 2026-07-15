@@ -31,7 +31,7 @@ export class ImportController {
   // Returns almost instantly with a job id — processing 5,000+ rows happens in the
   // background, never held open on this HTTP connection (Railway's edge will kill a
   // long-held request regardless of client-side timeouts).
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATIONS)
+  @Roles(Role.SUPER_ADMIN)
   @Post('investor-list')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE } }))
   async importInvestorList(
@@ -48,7 +48,7 @@ export class ImportController {
     return this.importService.getJob(id);
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATIONS)
+  @Roles(Role.SUPER_ADMIN)
   @Post('folio-report')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE } }))
   async importFolioReport(

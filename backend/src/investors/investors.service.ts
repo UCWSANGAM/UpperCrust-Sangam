@@ -195,6 +195,9 @@ export class InvestorsService {
         grossSalesCY: true,
         redemptionsCY: true,
         totalMfAum: true,
+        sipGrossSalesFY: true,
+        sipNetSalesFY: true,
+        nfoGrossSalesFY: true,
       },
       _count: { _all: true },
     });
@@ -218,8 +221,21 @@ export class InvestorsService {
         netSalesCY: Number(g._sum.netSalesCY) || 0,
         grossSalesCY: Number(g._sum.grossSalesCY) || 0,
         redemptionsCY: Number(g._sum.redemptionsCY) || 0,
+        sipGrossSalesFY: Number(g._sum.sipGrossSalesFY) || 0,
+        sipNetSalesFY: Number(g._sum.sipNetSalesFY) || 0,
+        lumpsumGrossSalesFY: Math.max(0, (Number(g._sum.grossSalesFY) || 0) - (Number(g._sum.sipGrossSalesFY) || 0)),
+        nfoGrossSalesFY: Number(g._sum.nfoGrossSalesFY) || 0,
       }))
       .sort((a, b) => b.netSalesFY - a.netSalesFY);
+  }
+
+  // AUM history for trend charts — starts accumulating from the first import onward
+  async aumTrend() {
+    return this.prisma.dailySnapshot.findMany({
+      orderBy: { date: 'asc' },
+      take: 180,
+      select: { date: true, totalAum: true, investorCount: true },
+    });
   }
 
   // Rules-based cross-sell detection using AUM composition and needs-gap data

@@ -52,7 +52,7 @@ export default function CalendarPage() {
               onClick={() => setWeekStart(addDays(weekStart, -7))}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface text-muted hover:text-ink"
             >
-              <ChevronLeft size={15} />
+              <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => setWeekStart(startOfWeek(new Date()))}
@@ -64,7 +64,7 @@ export default function CalendarPage() {
               onClick={() => setWeekStart(addDays(weekStart, 7))}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface text-muted hover:text-ink"
             >
-              <ChevronRight size={15} />
+              <ChevronRight size={16} />
             </button>
           </div>
         }
@@ -95,7 +95,7 @@ export default function CalendarPage() {
                     }`}
                   >
                     <div className="flex items-center gap-1">
-                      {t.type === 'MEETING' ? <Video size={10} /> : <CheckSquare size={10} />}
+                      {t.type === 'MEETING' ? <Video size={12} /> : <CheckSquare size={12} />}
                       <span className="truncate">{t.title}</span>
                     </div>
                     {t.investor && <p className="mt-0.5 truncate text-[10px] opacity-70">{t.investor.name}</p>}

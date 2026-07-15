@@ -41,6 +41,7 @@ export default function LoginPage() {
       sessionStorage.setItem('accessToken', data.accessToken);
       sessionStorage.setItem('refreshToken', data.refreshToken);
       sessionStorage.setItem('userName', data.user?.name || '');
+      sessionStorage.setItem('userRole', data.user?.role || '');
       router.push('/dashboard');
     } catch {
       setError('Invalid credentials');

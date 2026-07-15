@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import { Card, PageHeader, Badge, Avatar } from '@/components/ui';
+import { Card, PageHeader, Badge, Avatar, SectionTitle, EmptyState } from '@/components/ui';
+import { CheckCircle2 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 const GOLD = '#B8935A';
@@ -24,6 +25,13 @@ type ComplianceRow = {
   pending: number;
 };
 
+type AgingRow = {
+  investorId: string;
+  name: string;
+  aum: number;
+  quartersOverdue: number;
+};
+
 function formatCr(value: number | null) {
   if (!value) return '—';
   return `₹${(value / 10000000).toFixed(2)} Cr`;
@@ -38,10 +46,12 @@ function progressTone(pct: number): 'green' | 'gold' | 'red' {
 export default function ReviewsPage() {
   const [due, setDue] = useState<Due | null>(null);
   const [compliance, setCompliance] = useState<ComplianceRow[]>([]);
+  const [aging, setAging] = useState<AgingRow[]>([]);
 
   useEffect(() => {
     api.get('/reviews/due').then(({ data }) => setDue(data));
     api.get('/reviews/compliance').then(({ data }) => setCompliance(data));
+    api.get('/reviews/aging').then(({ data }) => setAging(data));
   }, []);
 
   if (!due) return <div className="p-8 text-sm text-muted">Loading...</div>;
@@ -84,7 +94,7 @@ export default function ReviewsPage() {
 
       {isTeamView && (
         <>
-          <h2 className="mb-3 font-display text-lg text-ink">Team compliance</h2>
+          <SectionTitle>Team compliance</SectionTitle>
           <Card className="mb-8 overflow-hidden">
             <table className="w-full text-[13px]">
               <thead>
@@ -120,7 +130,43 @@ export default function ReviewsPage() {
         </>
       )}
 
-      <h2 className="mb-3 font-display text-lg text-ink">Pending review ({due.pending.length})</h2>
+      {aging.length > 0 && (
+        <>
+          <SectionTitle>Most overdue (aging)</SectionTitle>
+          <Card className="mb-8 overflow-hidden">
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="border-b border-border bg-background/60 text-left text-[11px] font-medium uppercase tracking-wide text-muted">
+                  <th className="px-5 py-3">Investor</th>
+                  <th className="px-5 py-3 text-right">AUM</th>
+                  <th className="px-5 py-3 text-right">Overdue</th>
+                  <th className="px-5 py-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {aging.slice(0, 10).map((a) => (
+                  <tr key={a.investorId} className="border-b border-border last:border-0 hover:bg-background/50">
+                    <td className="px-5 py-3 text-ink">{a.name}</td>
+                    <td className="px-5 py-3 text-right font-display text-ink">{formatCr(a.aum)}</td>
+                    <td className="px-5 py-3 text-right">
+                      <Badge tone={a.quartersOverdue >= 3 ? 'red' : 'gold'}>
+                        {a.quartersOverdue >= 99 ? 'Never reviewed' : `${a.quartersOverdue}Q overdue`}
+                      </Badge>
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <Link href={`/investors/${a.investorId}`} className="text-xs font-medium text-accentDark hover:underline">
+                        Review now
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        </>
+      )}
+
+      <SectionTitle>Pending review ({due.pending.length})</SectionTitle>
       <Card className="overflow-hidden">
         <table className="w-full text-[13px]">
           <thead>
@@ -133,8 +179,8 @@ export default function ReviewsPage() {
           <tbody>
             {due.pending.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-5 py-8 text-center text-muted">
-                  All caught up for this quarter.
+                <td colSpan={3}>
+                  <EmptyState message="All caught up for this quarter." icon={CheckCircle2} />
                 </td>
               </tr>
             )}

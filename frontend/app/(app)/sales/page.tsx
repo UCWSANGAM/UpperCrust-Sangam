@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Card, PageHeader, Badge, Avatar, StatCard } from '@/components/ui';
-import { TrendingUp, Users, Wallet } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Card, PageHeader, Badge, Avatar, StatCard, ChartCard, EmptyState } from '@/components/ui';
+import { TrendingUp, Users, Wallet, Repeat } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 type RmSales = {
   rmId: string;
@@ -16,15 +16,17 @@ type RmSales = {
   netSalesCY: number;
   grossSalesCY: number;
   redemptionsCY: number;
+  sipGrossSalesFY: number;
+  sipNetSalesFY: number;
+  lumpsumGrossSalesFY: number;
+  nfoGrossSalesFY: number;
 };
 
 const GOLD = '#B8935A';
+const NAVY = '#14171B';
 
 function formatCr(value: number) {
   return `₹${(value / 10000000).toFixed(2)} Cr`;
-}
-function toCr(value: number) {
-  return Number((value / 10000000).toFixed(2));
 }
 
 export default function SalesPage() {
@@ -43,49 +45,76 @@ export default function SalesPage() {
       netSalesFY: acc.netSalesFY + r.netSalesFY,
       netSalesCY: acc.netSalesCY + r.netSalesCY,
       totalAum: acc.totalAum + r.totalAum,
+      sipGrossSalesFY: acc.sipGrossSalesFY + r.sipGrossSalesFY,
+      lumpsumGrossSalesFY: acc.lumpsumGrossSalesFY + r.lumpsumGrossSalesFY,
+      nfoGrossSalesFY: acc.nfoGrossSalesFY + r.nfoGrossSalesFY,
     }),
-    { netSalesFY: 0, netSalesCY: 0, totalAum: 0 },
+    { netSalesFY: 0, netSalesCY: 0, totalAum: 0, sipGrossSalesFY: 0, lumpsumGrossSalesFY: 0, nfoGrossSalesFY: 0 },
   );
-
-  const maxNetSales = Math.max(...rows.map((r) => r.netSalesFY), 1);
 
   return (
     <div className="p-8">
       <PageHeader title="Sales by RM" subtitle={`${rows.length} relationship managers`} />
 
-      <div className="mb-6 grid grid-cols-3 gap-4 max-w-2xl">
+      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4 max-w-3xl">
         <StatCard label="Team AUM" value={formatCr(totals.totalAum)} icon={Wallet} />
         <StatCard label="Net Sales FY" value={formatCr(totals.netSalesFY)} icon={TrendingUp} />
         <StatCard label="Net Sales CY" value={formatCr(totals.netSalesCY)} icon={Users} />
+        <StatCard label="NFO Sales FY" value={formatCr(totals.nfoGrossSalesFY)} icon={Repeat} />
       </div>
 
       {rows.length > 0 && (
-        <Card className="mb-6 p-5">
-          <p className="mb-4 text-[13px] font-medium text-ink">Net sales FY by RM</p>
-          <div className="space-y-3">
-            {[...rows]
-              .sort((a, b) => b.netSalesFY - a.netSalesFY)
-              .slice(0, 8)
-              .map((r, i) => {
-                const max = Math.max(...rows.map((x) => x.netSalesFY), 1);
-                const pct = Math.max(6, (r.netSalesFY / max) * 100);
-                return (
-                  <div key={r.rmId} className="flex items-center gap-3">
-                    <span className="w-28 shrink-0 truncate text-[12px] text-ink">{r.rmName}</span>
-                    <div className="relative h-6 flex-1 overflow-hidden rounded bg-background">
-                      <div
-                        className="h-full rounded transition-all"
-                        style={{ width: `${pct}%`, backgroundColor: i === 0 ? '#14171B' : '#B8935A' }}
-                      />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-ink">
-                        {formatCr(r.netSalesFY)}
-                      </span>
+        <div className="mb-6 grid gap-4 lg:grid-cols-2">
+          <ChartCard title="SIP vs lumpsum (gross sales FY)" icon={Repeat}>
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'SIP', value: Number((totals.sipGrossSalesFY / 10000000).toFixed(2)) },
+                    { name: 'Lumpsum', value: Number((totals.lumpsumGrossSalesFY / 10000000).toFixed(2)) },
+                  ]}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={45}
+                  outerRadius={68}
+                  paddingAngle={2}
+                  label={({ name, value }) => `${name} ₹${value}Cr`}
+                  labelLine={false}
+                >
+                  <Cell fill={GOLD} />
+                  <Cell fill={NAVY} />
+                </Pie>
+                <Tooltip formatter={(v: number) => `₹${v} Cr`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          <ChartCard title="Net sales FY by RM" icon={TrendingUp}>
+            <div className="space-y-3">
+              {[...rows]
+                .sort((a, b) => b.netSalesFY - a.netSalesFY)
+                .slice(0, 6)
+                .map((r, i) => {
+                  const max = Math.max(...rows.map((x) => x.netSalesFY), 1);
+                  const pct = Math.max(6, (r.netSalesFY / max) * 100);
+                  return (
+                    <div key={r.rmId} className="flex items-center gap-3">
+                      <span className="w-24 shrink-0 truncate text-[12px] text-ink">{r.rmName}</span>
+                      <div className="relative h-6 flex-1 overflow-hidden rounded bg-background">
+                        <div
+                          className="h-full rounded transition-all"
+                          style={{ width: `${pct}%`, backgroundColor: i === 0 ? NAVY : GOLD }}
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-ink">
+                          {formatCr(r.netSalesFY)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-          </div>
-        </Card>
+                  );
+                })}
+            </div>
+          </ChartCard>
+        </div>
       )}
 
       <Card className="overflow-hidden">
@@ -95,8 +124,9 @@ export default function SalesPage() {
               <th className="px-5 py-3">RM</th>
               <th className="px-5 py-3 text-right">Clients</th>
               <th className="px-5 py-3 text-right">AUM</th>
-              <th className="px-5 py-3">Net Sales FY</th>
-              <th className="px-5 py-3 text-right">Gross Sales FY</th>
+              <th className="px-5 py-3 text-right">SIP Sales FY</th>
+              <th className="px-5 py-3 text-right">Lumpsum FY</th>
+              <th className="px-5 py-3 text-right">NFO FY</th>
               <th className="px-5 py-3 text-right">Redemptions FY</th>
               <th className="px-5 py-3 text-right">Net Sales CY</th>
             </tr>
@@ -104,13 +134,15 @@ export default function SalesPage() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={7} className="px-5 py-8 text-center text-muted">Loading...</td>
+                <td colSpan={8} className="px-5 py-8">
+                  <div className="mx-auto h-4 w-40 animate-pulse rounded bg-border/70" />
+                </td>
               </tr>
             )}
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-5 py-8 text-center text-muted">
-                  No sales data yet — upload the investor data file under Data Import.
+                <td colSpan={8}>
+                  <EmptyState message="No sales data yet — upload the investor data file under Data Import." icon={Wallet} />
                 </td>
               </tr>
             )}
@@ -124,18 +156,11 @@ export default function SalesPage() {
                 </td>
                 <td className="px-5 py-3 text-right text-muted">{r.investorCount}</td>
                 <td className="px-5 py-3 text-right font-display text-ink">{formatCr(r.totalAum)}</td>
-                <td className="px-5 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-display text-ink">{formatCr(r.netSalesFY)}</span>
-                    <div className="h-1.5 w-16 overflow-hidden rounded-full bg-border">
-                      <div
-                        className="h-full bg-accent"
-                        style={{ width: `${Math.max(4, (r.netSalesFY / maxNetSales) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
+                <td className="px-5 py-3 text-right text-ink">{formatCr(r.sipGrossSalesFY)}</td>
+                <td className="px-5 py-3 text-right text-muted">{formatCr(r.lumpsumGrossSalesFY)}</td>
+                <td className="px-5 py-3 text-right">
+                  {r.nfoGrossSalesFY > 0 ? <Badge tone="blue">{formatCr(r.nfoGrossSalesFY)}</Badge> : <span className="text-muted">—</span>}
                 </td>
-                <td className="px-5 py-3 text-right text-muted">{formatCr(r.grossSalesFY)}</td>
                 <td className="px-5 py-3 text-right">
                   <Badge tone="red">{formatCr(r.redemptionsFY)}</Badge>
                 </td>

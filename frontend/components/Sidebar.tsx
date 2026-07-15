@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -13,6 +14,7 @@ import {
   LogOut,
   Sparkles,
   MessageCircle,
+  Ticket as TicketIcon,
 } from 'lucide-react';
 
 const NAV = [
@@ -22,20 +24,29 @@ const NAV = [
   { href: '/cross-sell', label: 'Cross-Sell', icon: Sparkles },
   { href: '/reviews', label: 'Quarterly Reviews', icon: ClipboardCheck },
   { href: '/tasks', label: 'Tasks & Meetings', icon: CalendarClock },
+  { href: '/tickets', label: 'Tickets', icon: TicketIcon },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
   { href: '/chat', label: 'Team Chat', icon: MessageCircle },
-  { href: '/import', label: 'Data Import', icon: Upload },
+  { href: '/import', label: 'Data Import', icon: Upload, adminOnly: true },
   { href: '/users', label: 'Users', icon: UserCog },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [role, setRole] = useState('');
+
+  useEffect(() => {
+    setRole(sessionStorage.getItem('userRole') || '');
+  }, []);
 
   function signOut() {
     sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
     router.push('/login');
   }
+
+  const visibleNav = NAV.filter((item) => !item.adminOnly || role === 'SUPER_ADMIN');
 
   return (
     <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col justify-between bg-sidebar px-3 py-5">
@@ -50,7 +61,7 @@ export default function Sidebar() {
           </div>
         </div>
         <nav className="flex flex-col gap-0.5">
-          {NAV.map((item) => {
+          {visibleNav.map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
             return (

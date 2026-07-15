@@ -26,6 +26,12 @@ export class InvestorsController {
   }
 
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.BRANCH_MANAGER, Role.RELATIONSHIP_MANAGER, Role.OPERATIONS, Role.COMPLIANCE, Role.RESEARCH)
+  @Get('trend')
+  trend() {
+    return this.investors.aumTrend();
+  }
+
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.BRANCH_MANAGER, Role.RELATIONSHIP_MANAGER, Role.OPERATIONS, Role.COMPLIANCE, Role.RESEARCH)
   @Get('sales-by-rm')
   salesByRm(@CurrentUser() user: { id: string; role: string }) {
     return this.investors.salesByRm(user);

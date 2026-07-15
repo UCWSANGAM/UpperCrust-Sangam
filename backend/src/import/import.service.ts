@@ -119,6 +119,15 @@ export class ImportService {
             liveSipAmount: toDecimal(row['Live SIP Amount']),
             liveSipCount: toInt(row['No. of Live SIPs']),
 
+            sipGrossSalesFY: toDecimal(row['MF SIP Gross Sales(FY) (₹)']),
+            sipNetSalesFY: toDecimal(row['MF Net SIP Sales (FY) (₹)']),
+            sipGrossSalesCY: toDecimal(row['MF SIP Gross Sales(CY) (₹)']),
+            sipNetSalesCY: toDecimal(row['MF Net SIP Sales (CY) (₹)']),
+            nfoGrossSalesFY: toDecimal(row['NFO Gross Sales (FY) (₹)']),
+            nfoGrossSalesCY: toDecimal(row['NFO Gross Sales (CY) (₹)']),
+            nfoSipSalesFY: toDecimal(row['NFO SIP Sales (FY) (₹)']),
+            nfoSipSalesCY: toDecimal(row['NFO SIP Sales (CY) (₹)']),
+
             totalNeedsIdentified: toInt(row['Total needs Identified']),
             mappedNeedWithGap: toInt(row['No. of Mapped Need with gap']),
             totalLumpsumGapAmount: toDecimal(row['Total Lumpsum Gap Amount (₹)']),
@@ -162,6 +171,8 @@ export class ImportService {
       },
     });
 
+    await this.captureSnapshot();
+
     await this.prisma.auditLog.create({
       data: {
         userId: fallbackOwnerId,
@@ -172,6 +183,41 @@ export class ImportService {
     });
 
     this.logger.log(`Import job ${jobId} done: ${created} created, ${updated} updated, ${unmatchedNames.size} unmatched RM names`);
+  }
+
+  // One row per calendar day, upserted so multiple imports on the same day just
+  // refresh today's figure rather than creating duplicates.
+  private async captureSnapshot() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const agg = await this.prisma.investor.aggregate({
+      _sum: { totalMfAum: true, equityAum: true, debtAum: true, cashAum: true, goldAum: true, pmsAum: true },
+      _count: { _all: true },
+    });
+
+    await this.prisma.dailySnapshot.upsert({
+      where: { date: today },
+      update: {
+        totalAum: agg._sum.totalMfAum,
+        equityAum: agg._sum.equityAum,
+        debtAum: agg._sum.debtAum,
+        cashAum: agg._sum.cashAum,
+        goldAum: agg._sum.goldAum,
+        pmsAum: agg._sum.pmsAum,
+        investorCount: agg._count._all,
+      },
+      create: {
+        date: today,
+        totalAum: agg._sum.totalMfAum,
+        equityAum: agg._sum.equityAum,
+        debtAum: agg._sum.debtAum,
+        cashAum: agg._sum.cashAum,
+        goldAum: agg._sum.goldAum,
+        pmsAum: agg._sum.pmsAum,
+        investorCount: agg._count._all,
+      },
+    });
   }
 
   // Kept for legacy folio-level detail if a separate folio export is ever uploaded again

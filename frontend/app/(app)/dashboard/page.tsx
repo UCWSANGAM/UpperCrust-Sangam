@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Wallet, TrendingUp, TrendingDown, Percent, Folder, Users, Cake, PieChart as PieIcon } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Percent, Folder, Users, Cake, PieChart as PieIcon, Upload } from 'lucide-react';
 import { api } from '@/lib/api';
-import { Card, PageHeader, StatCard, Avatar, Badge } from '@/components/ui';
+import { Card, PageHeader, StatCard, Avatar, Badge, ChartCard, EmptyState, Skeleton } from '@/components/ui';
 
 type Stats = {
   totalInvestors: number;
@@ -50,22 +50,6 @@ function xirrTone(x: number | null): 'green' | 'red' | 'gray' {
   return x >= 0 ? 'green' : 'red';
 }
 
-function ChartCard({ title, icon: Icon, children }: { title: string; icon?: any; children: React.ReactNode }) {
-  return (
-    <Card className="p-5">
-      <div className="mb-4 flex items-center gap-2.5">
-        {Icon && (
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/12">
-            <Icon size={14} className="text-accentDark" strokeWidth={2} />
-          </div>
-        )}
-        <p className="text-[13px] font-medium text-ink">{title}</p>
-      </div>
-      {children}
-    </Card>
-  );
-}
-
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [occasions, setOccasions] = useState<Occasion[]>([]);
@@ -86,7 +70,16 @@ export default function DashboardPage() {
       <PageHeader title={`${greeting()}, ${userName.split(' ')[0]}`} subtitle="Here's how the desk is tracking today" />
 
       {error && <p className="text-sm text-red-600">{error}</p>}
-      {!stats && !error && <p className="text-sm text-muted">Loading...</p>}
+      {!stats && !error && (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-border bg-surface p-5">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="mt-3 h-6 w-24" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {stats && (
         <>
@@ -100,9 +93,9 @@ export default function DashboardPage() {
           </div>
 
           {stats.totalInvestors === 0 ? (
-            <p className="mt-8 text-sm text-muted">
-              No investor data yet — go to Data Import to upload your investor data file.
-            </p>
+            <div className="mt-6">
+              <EmptyState message="No investor data yet — go to Data Import to upload your investor data file." icon={Upload} />
+            </div>
           ) : (
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               <ChartCard title="AUM composition" icon={PieIcon}>
@@ -220,7 +213,7 @@ export default function DashboardPage() {
           {occasions.length > 0 && (
             <Card className="mt-4 p-5">
               <div className="mb-4 flex items-center gap-2">
-                <Cake size={15} className="text-accentDark" />
+                <Cake size={14} className="text-accentDark" />
                 <p className="text-[13px] font-medium text-ink">Upcoming birthdays & anniversaries</p>
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">

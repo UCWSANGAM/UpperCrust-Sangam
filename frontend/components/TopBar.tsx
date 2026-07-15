@@ -9,6 +9,7 @@ const TITLES: Record<string, string> = {
   '/cross-sell': 'Cross-Sell Opportunities',
   '/reviews': 'Quarterly Reviews',
   '/tasks': 'Tasks & Meetings',
+  '/tickets': 'Tickets',
   '/calendar': 'Calendar',
   '/chat': 'Team Chat',
   '/import': 'Data Import',
@@ -24,7 +25,7 @@ export default function TopBar() {
     <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-surface px-8">
       <p className="text-[13px] font-medium text-muted">{title}</p>
       <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-[12px] text-muted">
-        <Search size={13} />
+        <Search size={14} />
         <span>Search coming soon</span>
       </div>
     </header>

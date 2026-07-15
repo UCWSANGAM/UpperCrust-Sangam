@@ -108,4 +108,37 @@ export class ReviewsService {
 
     return rows.sort((a, b) => b.total - a.total);
   }
+
+  // Aging: how many consecutive quarters an investor has gone without a review —
+  // surfaces the worst-neglected relationships, not just this quarter's pending list.
+  async agingReport(user: { id: string; role: string }) {
+    const isPrivileged = ['SUPER_ADMIN', 'ADMIN', 'BRANCH_MANAGER'].includes(user.role);
+    const where = isPrivileged ? {} : { ownerId: user.id };
+    const { year, quarter } = currentQuarter();
+
+    const investors = await this.prisma.investor.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        totalMfAum: true,
+        quarterlyReviews: { orderBy: [{ year: 'desc' }, { quarter: 'desc' }], take: 1, select: { year: true, quarter: true } },
+      },
+    });
+
+    function quartersSince(lastYear: number, lastQuarter: number): number {
+      return (year - lastYear) * 4 + (quarter - lastQuarter);
+    }
+
+    const aged = investors
+      .map((inv) => {
+        const last = inv.quarterlyReviews[0];
+        const quartersOverdue = last ? quartersSince(last.year, last.quarter) : 99; // never reviewed
+        return { investorId: inv.id, name: inv.name, aum: Number(inv.totalMfAum) || 0, quartersOverdue };
+      })
+      .filter((i) => i.quartersOverdue >= 1)
+      .sort((a, b) => b.quartersOverdue - a.quartersOverdue || b.aum - a.aum);
+
+    return aged.slice(0, 30);
+  }
 }

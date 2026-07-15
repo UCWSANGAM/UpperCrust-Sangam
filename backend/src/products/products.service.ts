@@ -100,4 +100,42 @@ export class ProductsService implements OnModuleInit {
       return { productId: p.id, productName: p.name, category: p.category, gapCount: gaps.length, topGaps: gaps };
     });
   }
+
+  // Cross-sell conversions this month — products flipped to HOLDS, proving the
+  // opportunity board is actually driving sales, not just flagging gaps.
+  async conversionsThisMonth(user: { id: string; role: string }) {
+    const isPrivileged = ['SUPER_ADMIN', 'ADMIN', 'BRANCH_MANAGER'].includes(user.role);
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const conversions = await this.prisma.investorProduct.findMany({
+      where: {
+        status: 'HOLDS',
+        updatedAt: { gte: monthStart },
+        ...(isPrivileged ? {} : { investor: { ownerId: user.id } }),
+      },
+      include: {
+        product: { select: { name: true } },
+        investor: { select: { name: true } },
+        updatedBy: { select: { name: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    const byProduct = new Map<string, number>();
+    for (const c of conversions) {
+      byProduct.set(c.product.name, (byProduct.get(c.product.name) || 0) + 1);
+    }
+
+    return {
+      total: conversions.length,
+      byProduct: Array.from(byProduct.entries()).map(([name, count]) => ({ name, count })),
+      recent: conversions.slice(0, 15).map((c) => ({
+        investorName: c.investor.name,
+        productName: c.product.name,
+        by: c.updatedBy?.name || 'Unknown',
+        date: c.updatedAt,
+      })),
+    };
+  }
 }

@@ -9,14 +9,38 @@ export class ImportService {
 
   constructor(private prisma: PrismaService, private crypto: FieldEncryptionService) {}
 
-  // Single-source daily export: one row per investor, covers profile, AUM, sales,
-  // and needs-gap data all at once. RM ownership comes from "Partner/Employee",
-  // matched against real User accounts — never from whoever uploaded the file.
-  // Processes in parallel batches (not one row at a time) — files can be 5,000+ rows.
-  async importInvestorList(buffer: Buffer, fallbackOwnerId: string) {
+  // Kicks off a background job and returns immediately with a job id. The actual row
+  // processing happens after this returns — Railway's edge network will kill a connection
+  // held open for the 1-2 minutes a 5,000+ row import takes, so we never make the browser
+  // wait on it directly. The frontend polls getJob() for progress.
+  async startInvestorListImport(buffer: Buffer, fallbackOwnerId: string) {
+    const job = await this.prisma.importJob.create({
+      data: { status: 'PENDING', createdById: fallbackOwnerId },
+    });
+
+    // Deliberately not awaited — runs after the HTTP response has already gone back.
+    this.runImport(job.id, buffer, fallbackOwnerId).catch((err) => {
+      this.logger.error(`Import job ${job.id} failed: ${err?.message || err}`);
+      this.prisma.importJob
+        .update({ where: { id: job.id }, data: { status: 'FAILED', errorMessage: String(err?.message || err), finishedAt: new Date() } })
+        .catch(() => {});
+    });
+
+    return { jobId: job.id };
+  }
+
+  async getJob(jobId: string) {
+    return this.prisma.importJob.findUnique({ where: { id: jobId } });
+  }
+
+  private async runImport(jobId: string, buffer: Buffer, fallbackOwnerId: string) {
+    await this.prisma.importJob.update({ where: { id: jobId }, data: { status: 'PROCESSING' } });
+
     const wb = XLSX.read(buffer, { type: 'buffer' });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: null });
+
+    await this.prisma.importJob.update({ where: { id: jobId }, data: { totalRows: rows.length } });
 
     const activeUsers = await this.prisma.user.findMany({
       where: { isActive: true },
@@ -30,8 +54,6 @@ export class ImportService {
     });
     const existingByUcc = new Map(existingByUccList.map((i) => [i.ucc, i.id]));
 
-    // Fallback for the many investors with no real UCC in this export — match by name
-    // so a daily re-upload updates them instead of creating duplicates every time.
     const existingByNameList = await this.prisma.investor.findMany({
       where: { ucc: null },
       select: { id: true, name: true },
@@ -52,7 +74,7 @@ export class ImportService {
     let created = 0;
     let updated = 0;
 
-    const BATCH_SIZE = 100;
+    const BATCH_SIZE = 25; // kept modest to stay within Supabase's pooled connection limit
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
       const batch = rows.slice(i, i + BATCH_SIZE);
 
@@ -121,11 +143,34 @@ export class ImportService {
         }),
       );
 
-      this.logger.log(`Import progress: ${Math.min(i + BATCH_SIZE, rows.length)}/${rows.length} rows`);
+      await this.prisma.importJob.update({
+        where: { id: jobId },
+        data: { processedRows: Math.min(i + BATCH_SIZE, rows.length), created, updated },
+      });
     }
 
-    this.logger.log(`Investor import: ${created} created, ${updated} updated, ${unmatchedNames.size} unmatched RM names`);
-    return { created, updated, total: rows.length, unmatchedRMs: Array.from(unmatchedNames) };
+    await this.prisma.importJob.update({
+      where: { id: jobId },
+      data: {
+        status: 'DONE',
+        created,
+        updated,
+        processedRows: rows.length,
+        unmatchedRMs: Array.from(unmatchedNames),
+        finishedAt: new Date(),
+      },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        userId: fallbackOwnerId,
+        action: 'IMPORT_INVESTOR_LIST',
+        entity: 'Investor',
+        metadata: { created, updated, total: rows.length },
+      },
+    });
+
+    this.logger.log(`Import job ${jobId} done: ${created} created, ${updated} updated, ${unmatchedNames.size} unmatched RM names`);
   }
 
   // Kept for legacy folio-level detail if a separate folio export is ever uploaded again
@@ -197,7 +242,6 @@ function toInt(value: any): number | undefined {
 
 function parseDate(value: any): Date | undefined {
   if (!value || value === '-') return undefined;
-  // Source format is DD-MM-YYYY
   const parts = String(value).split('-');
   if (parts.length !== 3) return undefined;
   const [dd, mm, yyyy] = parts;

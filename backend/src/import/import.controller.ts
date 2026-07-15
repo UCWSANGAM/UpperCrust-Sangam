@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   Controller,
+  Get,
+  Param,
   Post,
   UploadedFile,
   UseGuards,
@@ -26,7 +28,9 @@ const ALLOWED_MIME = [
 export class ImportController {
   constructor(private importService: ImportService, private prisma: PrismaService) {}
 
-  // Only admin-tier roles can bulk-import client data
+  // Returns almost instantly with a job id — processing 5,000+ rows happens in the
+  // background, never held open on this HTTP connection (Railway's edge will kill a
+  // long-held request regardless of client-side timeouts).
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATIONS)
   @Post('investor-list')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE } }))
@@ -35,16 +39,13 @@ export class ImportController {
     @CurrentUser() user: { id: string },
   ) {
     this.validateFile(file);
-    const result = await this.importService.importInvestorList(file.buffer, user.id);
-    await this.prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: 'IMPORT_INVESTOR_LIST',
-        entity: 'Investor',
-        metadata: result,
-      },
-    });
-    return result;
+    return this.importService.startInvestorListImport(file.buffer, user.id);
+  }
+
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATIONS, Role.RELATIONSHIP_MANAGER, Role.BRANCH_MANAGER, Role.RESEARCH, Role.COMPLIANCE)
+  @Get('jobs/:id')
+  getJob(@Param('id') id: string) {
+    return this.importService.getJob(id);
   }
 
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATIONS)

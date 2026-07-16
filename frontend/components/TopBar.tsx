@@ -1,6 +1,8 @@
 'use client';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Search } from 'lucide-react';
+import { CommandSearchTrigger } from './ds/Input';
+import { CommandPalette, useCommandPaletteShortcut } from './ds/CommandPalette';
 
 const TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -19,14 +21,17 @@ export default function TopBar() {
   const pathname = usePathname();
   const base = '/' + (pathname.split('/')[1] || '');
   const title = TITLES[base] || 'Sangam';
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  useCommandPaletteShortcut(() => setPaletteOpen(true));
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-surface px-8">
-      <p className="text-[13px] font-medium text-muted">{title}</p>
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-[12px] text-muted">
-        <Search size={14} />
-        <span>Search coming soon</span>
-      </div>
-    </header>
+    <>
+      <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-surface px-8">
+        <p className="text-[13px] font-medium text-muted">{title}</p>
+        <CommandSearchTrigger onClick={() => setPaletteOpen(true)} />
+      </header>
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+    </>
   );
 }

@@ -29,7 +29,10 @@ export default function TopBar() {
     <>
       <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-surface px-8">
         <p className="text-[13px] font-medium text-muted">{title}</p>
-        <CommandSearchTrigger onClick={() => setPaletteOpen(true)} />
+        <div className="flex items-center gap-3">
+          <span className="rounded bg-red-600 px-2 py-1 text-[10px] font-bold text-white">BUILD TEST</span>
+          <CommandSearchTrigger onClick={() => setPaletteOpen(true)} />
+        </div>
       </header>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </>

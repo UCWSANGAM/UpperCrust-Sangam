@@ -86,6 +86,7 @@ export default function Sidebar() {
             <div>
               <p className="text-[9px] font-medium uppercase tracking-wider text-gray-500">UpperCrust Wealth</p>
               <p className="font-display text-[17px] leading-none text-white">Sangam</p>
+              <p className="mt-1 inline-block rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white">SANGAM V24</p>
             </div>
           )}
         </div>

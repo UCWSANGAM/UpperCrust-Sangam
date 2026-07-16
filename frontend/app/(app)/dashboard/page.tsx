@@ -71,7 +71,7 @@ export default function DashboardPage() {
     <div className="p-8">
       <PageHeader title={`${greeting()}, ${userName.split(' ')[0]}`} subtitle="Here's how the desk is tracking today" />
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-[13px] text-red-600">{error}</p>}
       {!stats && !error && (
         <>
           <div className="mb-5 rounded-xl border border-border p-7">
@@ -160,7 +160,7 @@ export default function DashboardPage() {
                           <Legend
                             verticalAlign="bottom"
                             height={28}
-                            formatter={(value) => <span className="text-xs text-muted">{value}</span>}
+                            formatter={(value) => <span className="text-[12px] text-muted">{value}</span>}
                           />
                         </PieChart>
                       </ResponsiveContainer>

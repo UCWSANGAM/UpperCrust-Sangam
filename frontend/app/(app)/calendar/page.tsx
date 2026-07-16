@@ -56,7 +56,7 @@ export default function CalendarPage() {
             </button>
             <button
               onClick={() => setWeekStart(startOfWeek(new Date()))}
-              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-muted hover:text-ink"
+              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-muted hover:text-ink"
             >
               Today
             </button>

@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { Card, PageHeader, SectionTitle, Badge, Avatar, EmptyState, StatCard } from '@/components/ui';
+import { Wallet, TrendingUp, TrendingDown, Percent, MessageSquare, Package } from 'lucide-react';
 
 type Folio = {
   id: string;
@@ -48,6 +50,15 @@ function timeAgo(iso: string) {
   return `${days}d ago`;
 }
 
+function formatEventLabel(action: string) {
+  const map: Record<string, string> = {
+    NOTE_ADDED: 'Added a note',
+    IMPORT_INVESTOR_LIST: 'Investor list imported',
+    IMPORT_FOLIO_REPORT: 'Folio report imported',
+  };
+  return map[action] || action;
+}
+
 function ActivityFeed({ investorId }: { investorId: string }) {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [note, setNote] = useState('');
@@ -81,52 +92,41 @@ function ActivityFeed({ investorId }: { investorId: string }) {
 
   return (
     <div className="mt-10">
-      <h2 className="font-display text-xl text-ink">Notes & activity</h2>
+      <SectionTitle>Notes & activity</SectionTitle>
 
-      <form onSubmit={submitNote} className="mt-4 flex gap-2">
+      <form onSubmit={submitNote} className="flex gap-2">
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Add a note about this investor..."
-          className="flex-1 rounded border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
+          className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none focus:border-accent"
         />
         <button
           type="submit"
           disabled={busy}
-          className="rounded bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accentDark transition-colors disabled:opacity-50"
+          className="rounded-lg bg-accent px-4 py-2 text-[13px] font-medium text-white hover:bg-accentDark transition-colors disabled:opacity-50"
         >
           Add note
         </button>
       </form>
 
       <div className="mt-5 space-y-3">
-        {loading && <p className="text-sm text-muted">Loading...</p>}
-        {!loading && items.length === 0 && (
-          <p className="text-sm text-muted">No notes or activity yet — add the first note above.</p>
-        )}
+        {loading && <p className="text-[13px] text-muted">Loading...</p>}
+        {!loading && items.length === 0 && <EmptyState message="No notes or activity yet — add the first note above." icon={MessageSquare} />}
         {items.map((item) => (
-          <div key={item.id} className="rounded-lg border border-border bg-surface p-4">
+          <Card key={item.id} className="p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-ink">{item.actor}</span>
-              <span className="text-xs text-muted">{timeAgo(item.createdAt)}</span>
+              <span className="text-[13px] font-medium text-ink">{item.actor}</span>
+              <span className="text-[11px] text-muted">{timeAgo(item.createdAt)}</span>
             </div>
-            <p className="mt-1 text-sm text-muted">
+            <p className="mt-1 text-[13px] text-muted">
               {item.type === 'note' ? item.content : formatEventLabel(item.content)}
             </p>
-          </div>
+          </Card>
         ))}
       </div>
     </div>
   );
-}
-
-function formatEventLabel(action: string) {
-  const map: Record<string, string> = {
-    NOTE_ADDED: 'Added a note',
-    IMPORT_INVESTOR_LIST: 'Investor list imported',
-    IMPORT_FOLIO_REPORT: 'Folio report imported',
-  };
-  return map[action] || action;
 }
 
 function QuarterlyReviewBox({ investorId }: { investorId: string }) {
@@ -173,49 +173,49 @@ function QuarterlyReviewBox({ investorId }: { investorId: string }) {
 
   return (
     <div className="mt-10">
-      <h2 className="font-display text-xl text-ink">
-        Quarterly review — Q{currentQuarter} {currentYear}
-      </h2>
+      <SectionTitle>Quarterly review — Q{currentQuarter} {currentYear}</SectionTitle>
 
       {alreadyDone ? (
-        <p className="mt-3 text-sm text-green-700">Review completed for this quarter.</p>
+        <Badge tone="green">Review completed for this quarter</Badge>
       ) : (
-        <form onSubmit={submit} className="mt-4 max-w-md rounded-lg border border-border bg-surface p-4">
-          <label className="flex items-center gap-2 text-sm text-ink">
-            <input type="checkbox" checked={contactMade} onChange={(e) => setContactMade(e.target.checked)} />
-            Contact made with client
-          </label>
-          <label className="mt-2 flex items-center gap-2 text-sm text-ink">
-            <input type="checkbox" checked={riskProfileReviewed} onChange={(e) => setRiskProfileReviewed(e.target.checked)} />
-            Risk profile reviewed
-          </label>
-          <label className="mt-2 flex items-center gap-2 text-sm text-ink">
-            <input type="checkbox" checked={crossSellDiscussed} onChange={(e) => setCrossSellDiscussed(e.target.checked)} />
-            Cross-sell opportunities discussed
-          </label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Review notes..."
-            className="mt-3 w-full rounded border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
-            rows={3}
-          />
-          <button
-            type="submit"
-            disabled={busy}
-            className="mt-3 rounded bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accentDark transition-colors disabled:opacity-50"
-          >
-            Submit review
-          </button>
-        </form>
+        <Card className="max-w-md p-5">
+          <form onSubmit={submit}>
+            <label className="flex items-center gap-2 text-[13px] text-ink">
+              <input type="checkbox" checked={contactMade} onChange={(e) => setContactMade(e.target.checked)} />
+              Contact made with client
+            </label>
+            <label className="mt-2 flex items-center gap-2 text-[13px] text-ink">
+              <input type="checkbox" checked={riskProfileReviewed} onChange={(e) => setRiskProfileReviewed(e.target.checked)} />
+              Risk profile reviewed
+            </label>
+            <label className="mt-2 flex items-center gap-2 text-[13px] text-ink">
+              <input type="checkbox" checked={crossSellDiscussed} onChange={(e) => setCrossSellDiscussed(e.target.checked)} />
+              Cross-sell opportunities discussed
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Review notes..."
+              className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none focus:border-accent"
+              rows={3}
+            />
+            <button
+              type="submit"
+              disabled={busy}
+              className="mt-3 rounded-lg bg-accent px-4 py-2 text-[13px] font-medium text-white hover:bg-accentDark transition-colors disabled:opacity-50"
+            >
+              Submit review
+            </button>
+          </form>
+        </Card>
       )}
 
       {reviews.length > 0 && (
         <div className="mt-4 space-y-2">
           {reviews.map((r) => (
-            <div key={r.id} className="rounded border border-border bg-surface p-3 text-xs text-muted">
+            <Card key={r.id} className="p-3 text-[12px] text-muted">
               Q{r.quarter} {r.year} by {r.reviewer?.name} — {r.notes || 'No notes'}
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -257,30 +257,20 @@ function ProductMatrix({ investorId }: { investorId: string }) {
 
   return (
     <div className="mt-10">
-      <h2 className="font-display text-xl text-ink">Product holdings</h2>
-      <p className="mt-1 text-sm text-muted">Click a status to cycle it — Opportunity → Holds → Not eligible</p>
+      <SectionTitle>Product holdings</SectionTitle>
+      <p className="mb-4 text-[13px] text-muted">Click a status to cycle it — Opportunity → Holds → Not eligible</p>
       {loading ? (
-        <p className="mt-3 text-sm text-muted">Loading...</p>
+        <p className="text-[13px] text-muted">Loading...</p>
       ) : (
-        <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           {rows.map((r) => (
             <button
               key={r.productId}
               onClick={() => cycleStatus(r.productId, r.status)}
-              className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-left text-xs hover:border-accent"
+              className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-left hover:border-accent"
             >
-              <span className="text-ink">{r.productName}</span>
-              <span
-                className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                  r.status === 'HOLDS'
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : r.status === 'NOT_ELIGIBLE'
-                    ? 'bg-gray-100 text-gray-500'
-                    : 'bg-accent/10 text-accentDark'
-                }`}
-              >
-                {STATUS_LABELS[r.status]}
-              </span>
+              <span className="text-[13px] text-ink">{r.productName}</span>
+              <Badge tone={STATUS_TONE[r.status]}>{STATUS_LABELS[r.status]}</Badge>
             </button>
           ))}
         </div>
@@ -310,89 +300,77 @@ export default function InvestorDetailPage() {
       .catch(() => {});
   }, [id]);
 
-  if (error) return <div className="p-8 text-sm text-red-600">{error}</div>;
-  if (!investor) return <div className="p-8 text-sm text-muted">Loading...</div>;
+  if (error) return <div className="p-8 text-[13px] text-red-600">{error}</div>;
+  if (!investor) return <div className="p-8 text-[13px] text-muted">Loading...</div>;
 
   return (
     <div className="p-8">
-      <h1 className="font-display text-3xl text-ink">{investor.name}</h1>
-      <p className="mt-1 text-sm text-muted">{investor.familyGroup || 'No family group'}</p>
+      <div className="mb-2 flex items-center gap-3">
+        <Avatar name={investor.name} />
+        <PageHeader title={investor.name} subtitle={investor.familyGroup || 'No family group'} />
+      </div>
 
       {opportunities.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="-mt-4 mb-6 flex flex-wrap gap-2">
           {opportunities.map((reason, i) => (
-            <span key={i} className="rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs text-accentDark">
-              {reason}
-            </span>
+            <Badge key={i} tone="gold">{reason}</Badge>
           ))}
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <p className="text-xs uppercase text-muted">Total AUM</p>
-          <p className="mt-1 font-display text-xl text-ink">{formatCr(investor.totalMfAum)}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <p className="text-xs uppercase text-muted">Equity AUM</p>
-          <p className="mt-1 font-display text-xl text-ink">{formatCr(investor.equityAum)}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <p className="text-xs uppercase text-muted">Debt AUM</p>
-          <p className="mt-1 font-display text-xl text-ink">{formatCr(investor.debtAum)}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <p className="text-xs uppercase text-muted">XIRR</p>
-          <p className="mt-1 font-display text-xl text-ink">
-            {investor.xirrTotal ? `${investor.xirrTotal.toFixed(2)}%` : '—'}
-          </p>
-        </div>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <StatCard label="Total AUM" value={formatCr(investor.totalMfAum)} icon={Wallet} />
+        <StatCard label="Equity AUM" value={formatCr(investor.equityAum)} icon={TrendingUp} />
+        <StatCard label="Debt AUM" value={formatCr(investor.debtAum)} icon={TrendingDown} />
+        <StatCard label="XIRR" value={investor.xirrTotal ? `${investor.xirrTotal.toFixed(2)}%` : '—'} icon={Percent} />
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-4 max-w-md">
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <p className="text-xs uppercase text-muted">PAN</p>
-          <p className="mt-1 text-sm text-ink">{investor.pan || '—'}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <p className="text-xs uppercase text-muted">Mobile</p>
-          <p className="mt-1 text-sm text-ink">{investor.mobile || '—'}</p>
-        </div>
+      <div className="mt-4 grid max-w-md grid-cols-2 gap-4">
+        <Card className="p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">PAN</p>
+          <p className="mt-1 text-[13px] text-ink">{investor.pan || '—'}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Mobile</p>
+          <p className="mt-1 text-[13px] text-ink">{investor.mobile || '—'}</p>
+        </Card>
       </div>
 
-      <h2 className="mt-10 font-display text-xl text-ink">Folios ({investor.folios.length})</h2>
-      <div className="mt-4 overflow-hidden rounded-lg border border-border bg-surface">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-background/50 text-left text-xs uppercase text-muted">
-              <th className="px-4 py-3">Folio No</th>
-              <th className="px-4 py-3">AMC</th>
-              <th className="px-4 py-3">Scheme</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {investor.folios.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted">
-                  No folios linked yet — upload the Folio Report under Data Import.
-                </td>
+      <div className="mt-10">
+        <SectionTitle>Folios ({investor.folios.length})</SectionTitle>
+        <Card className="overflow-hidden">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-border bg-background/60 text-left text-[11px] font-medium uppercase tracking-wide text-muted">
+                <th className="px-5 py-3">Folio No</th>
+                <th className="px-5 py-3">AMC</th>
+                <th className="px-5 py-3">Scheme</th>
+                <th className="px-5 py-3">Status</th>
+                <th className="px-5 py-3 text-right">Value</th>
               </tr>
-            )}
-            {investor.folios.map((f) => (
-              <tr key={f.id} className="border-b border-border last:border-0">
-                <td className="px-4 py-3 text-ink">{f.folioNumber}</td>
-                <td className="px-4 py-3 text-muted">{f.amc}</td>
-                <td className="px-4 py-3 text-muted">{f.scheme}</td>
-                <td className="px-4 py-3 text-muted">{f.status || '—'}</td>
-                <td className="px-4 py-3 text-right font-display text-ink">
-                  {f.currentValue ? `₹${f.currentValue.toLocaleString('en-IN')}` : '—'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {investor.folios.length === 0 && (
+                <tr>
+                  <td colSpan={5}>
+                    <EmptyState message="No folios linked yet — upload the Folio Report under Data Import." icon={Package} />
+                  </td>
+                </tr>
+              )}
+              {investor.folios.map((f) => (
+                <tr key={f.id} className="border-b border-border last:border-0 hover:bg-background/50">
+                  <td className="px-5 py-3 text-ink">{f.folioNumber}</td>
+                  <td className="px-5 py-3 text-muted">{f.amc}</td>
+                  <td className="px-5 py-3 text-muted">{f.scheme}</td>
+                  <td className="px-5 py-3 text-muted">{f.status || '—'}</td>
+                  <td className="px-5 py-3 text-right font-display text-ink">
+                    {f.currentValue ? `₹${f.currentValue.toLocaleString('en-IN')}` : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
       </div>
 
       <ActivityFeed investorId={investor.id} />

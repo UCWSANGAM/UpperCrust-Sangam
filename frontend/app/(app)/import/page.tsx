@@ -61,7 +61,7 @@ export default function ImportPage() {
       <PageHeader title="Data Import" />
       <Card className="max-w-xl p-6">
         <h2 className="mb-3 font-display text-lg text-ink">Daily Investor Data</h2>
-        <p className="mb-4 text-sm text-muted">
+        <p className="mb-4 text-[13px] text-muted">
           One file, uploaded daily — profile, AUM, XIRR, sales figures, and needs-gap data all
           update in one go. RM ownership is matched from the Partner/Employee column. Runs in
           the background, so large files (5,000+ rows) are safe to upload.
@@ -71,16 +71,16 @@ export default function ImportPage() {
           accept=".xlsx,.xls"
           disabled={busy}
           onChange={handleFile}
-          className="text-sm text-muted"
+          className="text-[13px] text-muted"
         />
 
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-3 text-[13px] text-red-600">{error}</p>}
 
         {job && (
           <div className="mt-5">
             {job.status !== 'DONE' && job.status !== 'FAILED' && (
               <>
-                <div className="mb-2 flex items-center justify-between text-xs text-muted">
+                <div className="mb-2 flex items-center justify-between text-[12px] text-muted">
                   <span>{job.status === 'PENDING' ? 'Starting...' : 'Processing...'}</span>
                   <span>{job.processedRows} / {job.totalRows || '?'} rows</span>
                 </div>
@@ -91,10 +91,10 @@ export default function ImportPage() {
             )}
 
             {job.status === 'DONE' && (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-[13px] text-emerald-800">
                 Done — created {job.created}, updated {job.updated} of {job.totalRows} rows.
                 {job.unmatchedRMs && job.unmatchedRMs.length > 0 && (
-                  <p className="mt-1 text-xs text-emerald-700">
+                  <p className="mt-1 text-[12px] text-emerald-700">
                     RM names not found: {job.unmatchedRMs.join(', ')} — add them under Users first, matching the name exactly, then re-upload.
                   </p>
                 )}
@@ -102,7 +102,7 @@ export default function ImportPage() {
             )}
 
             {job.status === 'FAILED' && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-[13px] text-red-700">
                 Import failed: {job.errorMessage || 'Unknown error'}
               </div>
             )}

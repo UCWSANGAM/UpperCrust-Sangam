@@ -59,7 +59,7 @@ export default function ReviewsPage() {
     });
   }, []);
 
-  if (!due) return <div className="p-8 text-sm text-muted">Loading...</div>;
+  if (!due) return <div className="p-8 text-[13px] text-muted">Loading...</div>;
 
   const progress = due.total === 0 ? 0 : Math.round((due.completed / due.total) * 100);
   const isTeamView = compliance.length > 1 || (compliance[0] && compliance[0].rmName !== 'You');
@@ -175,7 +175,7 @@ export default function ReviewsPage() {
                       </Badge>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <Link href={`/investors/${a.investorId}`} className="text-xs font-medium text-accentDark hover:underline">
+                      <Link href={`/investors/${a.investorId}`} className="text-[12px] font-medium text-accentDark hover:underline">
                         Review now
                       </Link>
                     </td>
@@ -210,7 +210,7 @@ export default function ReviewsPage() {
                 <td className="px-5 py-3 text-ink">{inv.name}</td>
                 <td className="px-5 py-3 text-right font-display text-ink">{formatCr(inv.aum)}</td>
                 <td className="px-5 py-3 text-right">
-                  <Link href={`/investors/${inv.id}`} className="text-xs font-medium text-accentDark hover:underline">
+                  <Link href={`/investors/${inv.id}`} className="text-[12px] font-medium text-accentDark hover:underline">
                     Review now
                   </Link>
                 </td>

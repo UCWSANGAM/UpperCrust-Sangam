@@ -89,12 +89,12 @@ function CommentThread({ ticketId }: { ticketId: string }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Reply..."
-          className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs outline-none focus:border-accent"
+          className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] outline-none focus:border-accent"
         />
         <button
           type="submit"
           disabled={busy}
-          className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accentDark transition-colors disabled:opacity-50"
+          className="rounded-lg bg-accent px-3 py-1.5 text-[12px] font-medium text-white hover:bg-accentDark transition-colors disabled:opacity-50"
         >
           Reply
         </button>
@@ -307,7 +307,7 @@ export default function TicketsPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setExpanded(expanded === t.id ? null : t.id)}
-                  className="flex items-center gap-1 rounded-lg border border-border px-2 py-1.5 text-xs text-muted hover:text-ink"
+                  className="flex items-center gap-1 rounded-lg border border-border px-2 py-1.5 text-[12px] text-muted hover:text-ink"
                 >
                   <MessageCircle size={12} />
                   {expanded === t.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -315,7 +315,7 @@ export default function TicketsPage() {
                 <select
                   value={t.status}
                   onChange={(e) => setStatus(t.id, e.target.value)}
-                  className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none"
+                  className="rounded-lg border border-border bg-background px-2 py-1.5 text-[12px] outline-none"
                 >
                   <option value="OPEN">Open</option>
                   <option value="IN_PROGRESS">In progress</option>

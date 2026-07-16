@@ -82,12 +82,12 @@ function CommentThread({ taskId }: { taskId: string }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Add a follow-up..."
-          className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs outline-none focus:border-accent"
+          className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] outline-none focus:border-accent"
         />
         <button
           type="submit"
           disabled={busy}
-          className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accentDark transition-colors disabled:opacity-50"
+          className="rounded-lg bg-accent px-3 py-1.5 text-[12px] font-medium text-white hover:bg-accentDark transition-colors disabled:opacity-50"
         >
           Post
         </button>
@@ -151,24 +151,24 @@ export default function TasksPage() {
             placeholder="Title"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="col-span-2 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+            className="col-span-2 rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none focus:border-accent"
           />
           <input
             placeholder="Notes (optional)"
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            className="col-span-2 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+            className="col-span-2 rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none focus:border-accent"
           />
           <input
             type="datetime-local"
             value={form.dueAt}
             onChange={(e) => setForm({ ...form, dueAt: e.target.value })}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none focus:border-accent"
           />
           <select
             value={form.type}
             onChange={(e) => setForm({ ...form, type: e.target.value as 'TASK' | 'MEETING' })}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none focus:border-accent"
           >
             <option value="TASK">Task</option>
             <option value="MEETING">Meeting</option>
@@ -176,7 +176,7 @@ export default function TasksPage() {
           <select
             value={form.assigneeId}
             onChange={(e) => setForm({ ...form, assigneeId: e.target.value })}
-            className="col-span-2 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+            className="col-span-2 rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none focus:border-accent"
           >
             <option value="">Assign to myself</option>
             {rms.map((r) => (
@@ -186,7 +186,7 @@ export default function TasksPage() {
           <button
             type="submit"
             disabled={creating}
-            className="col-span-2 rounded-lg bg-accent py-2 text-sm font-medium text-white hover:bg-accentDark transition-colors disabled:opacity-50"
+            className="col-span-2 rounded-lg bg-accent py-2 text-[13px] font-medium text-white hover:bg-accentDark transition-colors disabled:opacity-50"
           >
             {creating ? 'Adding...' : 'Add'}
           </button>
@@ -229,8 +229,8 @@ export default function TasksPage() {
       )}
 
       <div className="space-y-2">
-        {loading && <p className="text-sm text-muted">Loading...</p>}
-        {!loading && tasks.length === 0 && <p className="text-sm text-muted">No tasks yet.</p>}
+        {loading && <p className="text-[13px] text-muted">Loading...</p>}
+        {!loading && tasks.length === 0 && <p className="text-[13px] text-muted">No tasks yet.</p>}
         {tasks.map((t) => (
           <Card key={t.id} className="overflow-hidden">
             <div className="flex items-center justify-between p-4">
@@ -248,7 +248,7 @@ export default function TasksPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setExpanded(expanded === t.id ? null : t.id)}
-                  className="flex items-center gap-1 rounded-lg border border-border px-2 py-1.5 text-xs text-muted hover:text-ink"
+                  className="flex items-center gap-1 rounded-lg border border-border px-2 py-1.5 text-[12px] text-muted hover:text-ink"
                 >
                   <MessageCircle size={12} />
                   {expanded === t.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -256,7 +256,7 @@ export default function TasksPage() {
                 <select
                   value={t.status}
                   onChange={(e) => setStatus(t.id, e.target.value)}
-                  className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none"
+                  className="rounded-lg border border-border bg-background px-2 py-1.5 text-[12px] outline-none"
                 >
                   <option value="OPEN">Open</option>
                   <option value="IN_PROGRESS">In progress</option>

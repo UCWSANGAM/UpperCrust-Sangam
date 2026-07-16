@@ -248,7 +248,7 @@ export default function DashboardPage() {
                     <XAxis dataKey="label" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
                     <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                    <Bar dataKey="count" fill={GOLD} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="count" fill="#B8935A" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartCard>
